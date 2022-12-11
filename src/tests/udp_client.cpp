@@ -1,9 +1,10 @@
 // Copyright (c) Neil D. Harvey
 
 #include <string>
+#include <memory>
 #include <spdlog/spdlog.h>
 
-#include "UDPSocket.h"
+#include <network/UDPSocket.h>
 
 using namespace std;
 
@@ -17,7 +18,7 @@ int main()
     int scanner_socket {50536};
 
     spdlog::info("Test starting...");
-    auto myUDP = sc::UDPSocket::socket(scanner_ip, scanner_socket);
+    auto myUDP = make_unique<sc::UDPSocket>(scanner_ip, scanner_socket);
 
     spdlog::info("calling sendto()");
     myUDP->sendto(msgout);
