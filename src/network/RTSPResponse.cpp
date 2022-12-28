@@ -4,9 +4,20 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <cctype>
 #include <spdlog/spdlog.h>
-#include <network/RTSPRequest.h>
-#include <network/RTSPResponse.h>
+#include <scannerclient/RTSPRequest.h>
+#include <scannerclient/RTSPResponse.h>
+
+auto trim = [](string& field){
+    field.erase(field.begin(), std::find_if(field.begin(), field.end(), [](int ch) {
+      return !std::isspace(ch);
+    }));
+    field.erase(std::find_if(field.rbegin(), field.rend(), [](int ch) {
+      return !std::isspace(ch);
+    }).base(), field.end());
+
+};
 
 namespace sc {
 
@@ -27,32 +38,24 @@ void RTSPResponse::parse() {
     bool bsdpcontent(false);
     // split remainder into lines then tokens
     while(getline(sresponse, line)){
+        spdlog::debug("line:{}", line);
         string hdrfield, hdrfieldvalue;
-        int i = 0;
-        //get RTSP header field name
-        while(line[i] != ':') {
-            hdrfield += line[i++];
-        }
+        int colonPos = line.find_first_of(':');
+        if(colonPos != string::npos){
+            hdrfield = line.substr(0, colonPos);
+            hdrfieldvalue = line.substr(colonPos + 1);
+            trim(hdrfield);
+            trim(hdrfieldvalue);
+            spdlog::debug("hdrfield:{}  hdrfieldvalue:{}", hdrfield, hdrfieldvalue);
 
-        // strip colon and leading whitespace
-        while(line[i] == ':' || line[i] == ' ') i++;
-
-        //get RTSP header field value
-        while(line[i] != '\r' && line[i] != '\n'){
-            hdrfieldvalue += line[i++];
-        }
-        m_hdr_flds[m_hdr_fld_map.at(hdrfield) ] = hdrfieldvalue;
-        if (hdrfield == "Content-Type"){
-            if (hdrfieldvalue == "application/sdp"){
+            m_hdr_flds[m_hdr_fld_map.at(hdrfield) ] = hdrfieldvalue;
+            if (hdrfield == "Content-Type" && hdrfieldvalue == "application/sdp"){
                 // Parse Session Description Protocol (SDP) content
                 parseSDP(sresponse);
+                break;
             }
-            else break;
         }
     }
-
-    for(auto& fld: m_hdr_flds)
-        spdlog::debug("HDR field:{}  HDR value:{}", fld.first, fld.second);
 
 }
 
@@ -97,6 +100,10 @@ string RTSPResponse::getHdrFld(RTSPHdrFld attr) const {
         return !((m_hdr_flds.find(attr)) == m_hdr_flds.end()) ?  m_hdr_flds.at(attr) : "";
 }
 
+size_t RTSPResponse::getFldCount() const{
+    return m_hdr_flds.size();
+}
+
 // Currently only the fields required by the Uniden scanner.
 //TODO: update for all RTSP header fields supported by RTSP/1.0
 const unordered_map<string, RTSPHdrFld> RTSPResponse::m_hdr_fld_map   {
@@ -109,7 +116,8 @@ const unordered_map<string, RTSPHdrFld> RTSPResponse::m_hdr_fld_map   {
     {"Content-Length", RTSPHdrFld::CONTENT_LENGTH},
     {"Content-Type", RTSPHdrFld::CONTENT_TYPE},
     {"Transport", RTSPHdrFld::TRANSPORT},
-    {"Session", RTSPHdrFld::SESSION}
+    {"Session", RTSPHdrFld::SESSION},
+    {"RTP-Info", RTSPHdrFld::RTP_INFO}
 };
 
 

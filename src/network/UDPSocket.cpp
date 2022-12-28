@@ -1,8 +1,9 @@
 // Copyright (c) Neil D. Harvey
 
 #include <memory>
+#include <span>
 #include <spdlog/spdlog.h>
-#include <network/UDPSocket.h>
+#include <scannerclient/UDPSocket.h>
 
 namespace sc {
 
@@ -32,9 +33,10 @@ std::string UDPSocket::recvfrom() {
                 spdlog::error("recvfrom() failed. {}", GETSOCKETERRNO());
             }
             spdlog::debug("Received ({} bytes)", bytes_received);
-            stripctrlchars(m_msgin, bytes_received);
+            std::span<char> buf(m_msgin, bytes_received);
+            stripctrlchars(buf);
 
-            dump("dump.bin", m_msgin, bytes_received);
+            dump("dump.bin", m_msgin);
             spdlog::debug("{}", m_msgin);
 
             return std::string(m_msgin);

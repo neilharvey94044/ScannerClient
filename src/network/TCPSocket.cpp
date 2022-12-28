@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 #include <spdlog/spdlog.h>
-#include <network/TCPSocket.h>
+#include <scannerclient/TCPSocket.h>
 
 namespace sc {
 

@@ -1,7 +1,9 @@
 // Copyright (c) Neil D. Harvey
 
+#include <cctype>
 #include <spdlog/spdlog.h>
-#include <network/SessionDescription.h>
+#include <scannerclient/MediaDescription.h>
+#include <scannerclient/SessionDescription.h>
 
 namespace sc {
 
@@ -22,11 +24,16 @@ void SessionDescription::parse(stringstream& sresponse){
         if(line.size() > 2 && isalpha(line[0])){
             sdp_type = line[0];
 
-            while(line[i] != '\r' && line[i] != '\n')
+            while( !iscntrl(line[i]) && i < line.size())
                 sdp_value += line[i++];
 
             m_sdp_value[sdp_type] = sdp_value;
             spdlog::debug("sdp_type:{}  sdp_value:{}", sdp_type, sdp_value);
+        }
+
+        //if next line is a media description parse media descriptions
+        if(sresponse.peek() == 'm'){
+            MediaDescription::parse(sresponse, m_md_collection);
         }
 
     }

@@ -34,11 +34,15 @@ extern "C" {
 
 
 #include <string>
+#include <span>
 #include <memory>
 
+using namespace std;
+
 namespace sc {
-void dump(char * fname, char * msg, int len);
-void stripctrlchars(char* msg, int len);
+
+void dump(const string fname, const string outbuf);
+void stripctrlchars(span<char>& msg);
 
 class Socket {
     public:

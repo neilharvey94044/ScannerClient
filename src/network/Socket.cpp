@@ -1,26 +1,35 @@
 // Copyright (c) Neil D. Harvey
 
 #include <string>
+#include <fstream>
+#include <span>
 #include <spdlog/spdlog.h>
 #include <network/Socket.h>
 
+using namespace std;
+
 namespace sc {
 
-
 // Utility function to dump data received to a file
-void dump(char * fname, char * msg, int len) {
-    FILE *f1 = fopen(fname, "wb");
-    assert(f1);
-    size_t r1 = fwrite(msg, sizeof msg[0], len, f1);
-    spdlog::debug("Wrote {} elements out of {} requested\n", r1, len );
-    fclose(f1);
+void dump(const string fname, const string outbuf) {
+    spdlog::debug("dump() dumping message to file {}", fname);
+    std::fstream fs;
+    fs.open(fname, std::ios::binary | std::ios::out);
+    if(!fs.is_open()){
+        spdlog::error("Unable to open file: {}", fname);
+        return;
+    }
+    fs << outbuf;
+    fs.close();
+    
 }
 
 // Utility function to replace control characters with spaces
-void stripctrlchars(char* msg, int len) {
+void stripctrlchars(span<char>& msg) {
     spdlog::debug("Stripping control characters.");
-    for(int i = 0; i < len; i++) {
-        if (iscntrl(msg[i]) != 0) msg[i] = 0x20;
+    for(char& c: msg){
+        if (iscntrl(c) != 0) {c = 0x20;}
+
     }
 }
 
