@@ -7,8 +7,6 @@
 #include <unordered_map>
 #include <string>
 
-using namespace std;
-
 namespace sc {
 
 // limited to the rtsp method types needed for the Uniden scanner
@@ -23,40 +21,36 @@ enum RTSPMethod {
 class RTSPRequest {
     public:
 
-         RTSPRequest(const RTSPMethod method, const string server_ip, const string user_agent, const int cseq) 
+         RTSPRequest(const RTSPMethod method, const std::string server_ip, const std::string user_agent, const int cseq) 
         :   m_method {method},
             m_server_ip {server_ip},
             m_user_agent {user_agent},
             m_cseq {cseq}
         {};
-         RTSPRequest(const RTSPMethod method, const string server_ip, const string server_port, const string user_agent, const int cseq) 
+         RTSPRequest(const RTSPMethod method, const std::string server_ip, const std::string server_port, const std::string user_agent, const int cseq) 
         :   m_method {method},
             m_server_ip {server_ip},
             m_server_port {server_port},
             m_user_agent {user_agent},
             m_cseq {cseq}
         {};
-        void setSessionId(const string session_id);
-        void setRTPPort(const string rtp_port);
-        string getString() const;
+        void setSessionId(const std::string session_id);
+        void setHintRTPPort(const std::string hint_rtp_port);
+        void setAudioChannel(const std::string audio_channel);
+        std::string getString() const;
 
 
 
-    protected:
+    private:
         RTSPMethod m_method;
-        string m_user_agent;
-        string m_session_id;
-        string m_server_ip;
-        string m_server_port {"554"};
-        string m_rtp_port {"49990-49991"};
+        std::string m_user_agent;
+        std::string m_session_id;
+        std::string m_server_ip;
+        std::string m_audio_channel;
+        std::string m_server_port {"554"};
+        std::string m_hint_rtp_port {""};
         int m_cseq;
-        const string rtspEnd              {"\r\n\r\n"};
-        const string rtspCR               {"\r\n"};
-        const string rtspAttrAccept       {"Accept: application/sdp"};
-        const string rtspAttrTransport    {"Transport: RTP/AVP;unicast;client_port={}"};
-        const string rtspAttrSession      {"Session: {}"};
-        const string rtspAttrRange        {"Range: npt=0.000-"};
-        const string rtspHdr              {"{} rtsp://{}{}/au:scanner.au{} RTSP/1.0"+ rtspCR +"CSeq: {}"+rtspCR+"User-Agent: {}"};
+
 };
 
 } //namespace

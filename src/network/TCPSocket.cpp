@@ -3,12 +3,14 @@
 #include <memory>
 #include <string>
 #include <spdlog/spdlog.h>
-#include <scannerclient/TCPSocket.h>
+#include "scannerclient/TCPSocket.h"
 
 namespace sc {
 
 TCPSocket::TCPSocket(std::string scanner_ip, int scanner_port) :
-            Socket(scanner_ip, scanner_port, SOCK_STREAM, IPPROTO_TCP)
+            m_scanner_ip {scanner_ip},
+            m_scanner_port{scanner_port},
+            Socket(SOCK_STREAM, IPPROTO_TCP)
         { }
 
 int TCPSocket::connect() {

@@ -5,14 +5,12 @@
 #include <scannerclient/MediaDescription.h>
 #include <scannerclient/SessionDescription.h>
 
+using namespace std;
+
 namespace sc {
 
 SessionDescription::SessionDescription(stringstream& sresponse){
     parse(sresponse);
-}
-
-const SessionDescription& SessionDescription::getSDP() const{
-    return *this;
 }
 
 void SessionDescription::parse(stringstream& sresponse){
@@ -27,22 +25,27 @@ void SessionDescription::parse(stringstream& sresponse){
             while( !iscntrl(line[i]) && i < line.size())
                 sdp_value += line[i++];
 
-            m_sdp_value[sdp_type] = sdp_value;
+            m_sdp_value.insert(make_pair(sdp_type, sdp_value));
             spdlog::debug("sdp_type:{}  sdp_value:{}", sdp_type, sdp_value);
         }
 
         //if next line is a media description parse media descriptions
         if(sresponse.peek() == 'm'){
-            MediaDescription::parse(sresponse, m_md_collection);
+            m_md_collection.push_back(std::move( MediaDescription::parse(sresponse)));
         }
 
     }
 
 }
 
-string SessionDescription::getSDPField(const char sdp_type) const{
-        return !((m_sdp_value.find(sdp_type)) == m_sdp_value.end()) ?  m_sdp_value.at(sdp_type) : "";
+string SessionDescription::getAudioChannel() const{
 
+    for(auto& md: m_md_collection){
+        if(md->getMediaType() == MediaDescription::media_type::audio) 
+            return md->getAudioChannel();
+    }
+
+    return "";
 }
 
 }

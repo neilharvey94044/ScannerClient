@@ -33,10 +33,7 @@ void stripctrlchars(span<char>& msg) {
     }
 }
 
-
-Socket::Socket(std::string scanner_ip, int scanner_port, int soctype, IPPROTO protocol ):
-                m_scanner_ip {scanner_ip},
-                m_scanner_port {scanner_port}{
+Socket::Socket(int soctype, IPPROTO protocol ) {
                     
                 #if defined(_WIN32)
                         spdlog::info("Initializing Windows WSA");

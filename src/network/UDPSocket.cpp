@@ -1,15 +1,47 @@
 // Copyright (c) Neil D. Harvey
 
 #include <memory>
+#include <string>
 #include <span>
 #include <spdlog/spdlog.h>
-#include <scannerclient/UDPSocket.h>
+#include "scannerclient/UDPSocket.h"
 
 namespace sc {
 
+// Used to get request/response scanner status
 UDPSocket::UDPSocket(std::string scanner_ip, int scanner_port):
-            Socket(scanner_ip, scanner_port, SOCK_DGRAM, IPPROTO_UDP)
+            m_scanner_ip{scanner_ip},
+            m_scanner_port{scanner_port},
+            Socket(SOCK_DGRAM, IPPROTO_UDP)
             { }
+
+// Used to receive RTP PCMU audio
+// Parameter scanner_port can be zero for now
+UDPSocket::UDPSocket(std::string scanner_ip, int scanner_port, int listen_port):
+            m_scanner_ip{scanner_ip},
+            m_scanner_port{scanner_port},
+            m_listen_port{listen_port},
+            Socket(SOCK_DGRAM, IPPROTO_UDP)
+            { }
+
+int UDPSocket::bind(){
+
+    struct addrinfo hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_flags = AI_PASSIVE;
+
+    struct addrinfo *bind_address;
+    getaddrinfo(0, std::to_string(m_listen_port).c_str(), &hints, &bind_address);
+
+    if (::bind(m_socket, bind_address->ai_addr, bind_address->ai_addrlen)) {
+        spdlog::error("bind() failed with Socket Error {}", GETSOCKETERRNO());
+        return 1;
+    }
+
+    return 0;
+}
 
 int UDPSocket::sendto(std::string msgout){
             m_server_addr.sin_family = AF_INET;
@@ -33,13 +65,7 @@ std::string UDPSocket::recvfrom() {
                 spdlog::error("recvfrom() failed. {}", GETSOCKETERRNO());
             }
             spdlog::debug("Received ({} bytes)", bytes_received);
-            std::span<char> buf(m_msgin, bytes_received);
-            stripctrlchars(buf);
-
-            dump("dump.bin", m_msgin);
-            spdlog::debug("{}", m_msgin);
-
-            return std::string(m_msgin);
+            return std::string(m_msgin, bytes_received);
         }
 
 UDPSocket::~UDPSocket(){ }

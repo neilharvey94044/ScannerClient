@@ -36,12 +36,17 @@ set( network_sources
 	"${PROJECT_SOURCE_DIR}/src/network/RTSPResponse.cpp"
 	"${PROJECT_SOURCE_DIR}/src/network/SessionDescription.cpp"
 	"${PROJECT_SOURCE_DIR}/src/network/MediaDescription.cpp"
+	"${PROJECT_SOURCE_DIR}/src/network/RTPSession.cpp"
+	"${PROJECT_SOURCE_DIR}/src/network/g711.cpp"
+	"${PROJECT_SOURCE_DIR}/src/utils/utils.cpp"		# temporarily here
+
 )
 
 add_library(network STATIC ${network_sources})
 target_include_directories(network
 							PUBLIC  ${PROJECT_SOURCE_DIR}/src/include
 							PRIVATE ${PROJECT_SOURCE_DIR}/src
+							PRIVATE ${PROJECT_SOURCE_DIR}/external
 							PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
 							PRIVATE ${PROJECT_SOURCE_DIR}/external/spdlog/include
 							)
@@ -60,7 +65,7 @@ target_include_directories(rtsp_test
 						PUBLIC  ${PROJECT_SOURCE_DIR}/src/include
 						PRIVATE ${PROJECT_SOURCE_DIR}/src
 						PRIVATE ${PROJECT_SOURCE_DIR}/src/tests
-						PRIVATE ${PROJECT_SOURCE_DIR}/external/format/include
+						PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
 						PRIVATE ${PROJECT_SOURCE_DIR}/external/spdlog/include
 						PRIVATE ${PROJECT_SOURCE_DIR}/external
 						)

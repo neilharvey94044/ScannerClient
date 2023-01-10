@@ -37,22 +37,19 @@ extern "C" {
 #include <span>
 #include <memory>
 
-using namespace std;
-
 namespace sc {
 
-void dump(const string fname, const string outbuf);
-void stripctrlchars(span<char>& msg);
+void dump(const std::string fname, const std::string outbuf);
+void stripctrlchars(std::span<char>& msg);
 
 class Socket {
     public:
         virtual ~Socket();
     
+    //TODO: make these member variables private
     protected:
         SOCKET m_socket;
-        std::string m_scanner_ip;
-        const int m_scanner_port;
-        Socket(std::string scanner_ip, int scanner_port, int soctype, IPPROTO protocol);
+        Socket(int soctype, IPPROTO protocol);
 };
 
 } // sc

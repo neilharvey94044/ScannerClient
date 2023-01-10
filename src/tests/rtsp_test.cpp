@@ -3,14 +3,16 @@
 #include <memory.h>
 #include <iostream>
 #include <string>
+#include <fmt/format.h>
 #include <spdlog/spdlog.h>
 #include <tinyxml2/tinyxml2.h>
+
 
 #include "scannerclient/TCPSocket.h"
 #include "scannerclient/UDPSocket.h"
 #include "scannerclient/RTSPRequest.h"
 #include "scannerclient/RTSPResponse.h"
-
+#include "scannerclient/RTPSession.h"
 #include "tests/response_test_data.h"
 
 using namespace tinyxml2;
@@ -29,22 +31,23 @@ int main(int argc, char* argv[])
 {
 
     //spdlog::set_pattern();  TODO:
-    spdlog::set_level(spdlog::level::info);
+    spdlog::set_level(spdlog::level::debug);
     spdlog::info("Testing starting.");
 
     int seq = 2;
 
-    string scanner_ip {"192.168.0.173"};
+    string scanner_ip {"192.168.0.174"};
     int scanner_rtsp_port {554};
     int scanner_udp_port {50536};
     string user_agent {"ScannerClient/1.0"};
-    string rtp_port {"49990-49991"};  //suggested to scanner
+    string hint_rtp_port {"49990-49991"};  //suggested to scanner
 
     // Test1_UDP_XML(scanner_ip, scanner_udp_port);
     // Test2_TCP_RTSP_OPTIONS(scanner_ip, scanner_rtsp_port, user_agent, seq);  // CAUTION:  hangs scanner
     // Test3_Verify_RTSP_Response_Parsing();
-    Test4_RTSP_Pseudo_Handshake();
-    // Test5_RTSP_Handshake(scanner_ip, scanner_rtsp_port, user_agent, rtp_port);
+    // Test4_RTSP_Pseudo_Handshake();
+     Test5_RTSP_Handshake(scanner_ip, scanner_rtsp_port, user_agent, hint_rtp_port);
+    // Test6_PCMU_Algorithm();
 
     spdlog::info("Testing ended.");
 }
@@ -61,6 +64,12 @@ void Test1_UDP_XML( string scanner_ip, int scanner_udp_port){
 
     spdlog::info("calling recvfrom()");
     string udpResponse = myUDP->recvfrom();
+
+    // remove extraneous control characters
+    // TODO: use an algorithm and get rid of stripctrlchars()
+    span buf(udpResponse);
+    stripctrlchars(buf);
+
     udpResponse.erase(0, 11);  //remove beginning of response that is not XML  TODO: make more generalized
 
     spdlog::info("parsing XML response");
@@ -72,7 +81,7 @@ void Test1_UDP_XML( string scanner_ip, int scanner_udp_port){
         return;
 
     spdlog::info("Exiting.");
-}
+    }
 
     spdlog::debug("Printing XMLDocument");
     doc.Print();
@@ -193,8 +202,11 @@ void Test4_RTSP_Pseudo_Handshake(){
     string scanner_ip {"192.168.0.173"};
     int scanner_rtsp_port {554};
     int scanner_udp_port {50536};
+    int actual_rtp_port{0};
     string user_agent {"ScannerClient/1.0"};
-    string rtp_port {"49990-49991"};  //suggested to scanner
+    string hint_rtp_port {"49990-49991"};  //suggested to scanner
+    string current_sessionID {""};
+    string audio_channel{""};
 
 
     // OPTIONS
@@ -212,16 +224,20 @@ void Test4_RTSP_Pseudo_Handshake(){
 
     // SETUP
     auto reqSETUP = make_unique<RTSPRequest>(RTSPMethod::SETUP, scanner_ip, user_agent, seq++);
-    //reqSETUP->setRTPPort(rtp_port);  //this is the requested UDP port to listen on for RTP stream
-    //reqSETUP->setFullURL(respDESCRIBE.getHdrFld(RTSPHdrFld::CONTENT_BASE) + respDESCRIBE.getSDP().getSDPFld("a")) //TODO: needs more parsing for 'a'
+    reqSETUP->setHintRTPPort(hint_rtp_port);  //this is the requested UDP port to listen on for RTP stream
+    audio_channel = respDESCRIBE.getAudioChannel();
+    reqSETUP->setAudioChannel(audio_channel);
     spdlog::info("\r\n"+reqSETUP->getString());
 
     RTSPResponse respSETUP(RTSPMethod::SETUP, setup_response);
+    current_sessionID = respSETUP.getSession();
+    actual_rtp_port = respSETUP.getRTPPort();
+    spdlog::info("RTP Port for stream is:{}", actual_rtp_port); //"client_port" attribute from "Transport" header
 
 
     // PLAY
     auto reqPLAY = make_unique<RTSPRequest>(RTSPMethod::PLAY, scanner_ip, user_agent, seq++);
-    reqPLAY->setSessionId("9999999");  //TODO: get this value from the response to SETUP
+    reqPLAY->setSessionId(current_sessionID); 
     spdlog::info("\r\n"+reqPLAY->getString());
 
     RTSPResponse respPLAY(RTSPMethod::PLAY, play_response);
@@ -229,17 +245,22 @@ void Test4_RTSP_Pseudo_Handshake(){
     // TEARDOWN
     spdlog::debug("creating TEARDOWN message");
     auto reqTEARDOWN = make_unique<RTSPRequest>(RTSPMethod::TEARDOWN, scanner_ip, user_agent, seq++);
-    reqTEARDOWN->setSessionId("9999999");  //TODO: get this value from the response to SETUP
+    reqTEARDOWN->setSessionId(current_sessionID);
     spdlog::info("\r\n"+reqTEARDOWN->getString());
 
     spdlog::info("Exiting.");
 }
 
-
-void Test5_RTSP_Handshake( string scanner_ip, int scanner_rtsp_port, string user_agent, string rtp_port){
+// Actual RTSP handshake with the scanner
+// OPTIONS, DESCRIBE, SETUP, PLAY, TEARDOWN fully implemented
+void Test5_RTSP_Handshake( string scanner_ip, int scanner_rtsp_port, string user_agent, string hint_rtp_port){
     spdlog::info("Entering Test5_RTSP_Handshake()");
 
     int seq {2};
+
+    int actual_rtp_port{0};
+    string current_sessionID {""};
+    string audio_channel{""};
 
     spdlog::info("opening socket");
     TCPSocket myTCP(scanner_ip, scanner_rtsp_port);
@@ -254,6 +275,7 @@ void Test5_RTSP_Handshake( string scanner_ip, int scanner_rtsp_port, string user
 
     string respOPTIONSstr = myTCP.recv();
     RTSPResponse respOPTIONS(RTSPMethod::OPTIONS, respOPTIONSstr);
+    spdlog::info("OPTIONS: {}", respOPTIONS.getStatus());
 
 
     // DESCRIBE
@@ -263,35 +285,49 @@ void Test5_RTSP_Handshake( string scanner_ip, int scanner_rtsp_port, string user
 
     string respDESCRIBEstr = myTCP.recv();
     RTSPResponse respDESCRIBE(RTSPMethod::DESCRIBE, respDESCRIBEstr);
+    spdlog::info("DESCRIBE: {}", respDESCRIBE.getStatus());
 
     // SETUP
     auto reqSETUP = make_unique<RTSPRequest>(RTSPMethod::SETUP, scanner_ip, user_agent, seq++);
-    //reqSETUP->setRTPPort(rtp_port);  //this is the requested UDP port to listen on for RTP stream
-    //reqSETUP->setFullURL(respDESCRIBE.getHdrFld(RTSPHdrFld::CONTENT_BASE) + respDESCRIBE.getSDP().getSDPFld("a")) //TODO: needs more parsing for 'a'
+    reqSETUP->setHintRTPPort(hint_rtp_port);  //this is the requested UDP port to listen on for RTP stream
+    audio_channel = respDESCRIBE.getAudioChannel();
+    reqSETUP->setAudioChannel(audio_channel);
     spdlog::info("\r\n"+reqSETUP->getString());
     myTCP.send(reqSETUP->getString());
 
     string respSETUPstr = myTCP.recv();
     RTSPResponse respSETUP(RTSPMethod::SETUP, respSETUPstr);
+    current_sessionID = respSETUP.getSession();
+    actual_rtp_port = respSETUP.getRTPPort();
+    spdlog::info("SETUP: {}", respSETUP.getStatus());
+    spdlog::info("RTP Port for stream is:{}", actual_rtp_port); //"client_port" attribute from "Transport" header
 
 
     // PLAY - send
     auto reqPLAY = make_unique<RTSPRequest>(RTSPMethod::PLAY, scanner_ip, user_agent, seq++);
-    reqPLAY->setSessionId("9999999");  //TODO: get this value from the response to SETUP
+    reqPLAY->setSessionId(current_sessionID); 
     spdlog::info("\r\n"+reqPLAY->getString());
     myTCP.send(reqPLAY->getString());
 
     // PLAY - receive
     string respPLAYstr = myTCP.recv();
     RTSPResponse respPLAY(RTSPMethod::PLAY, respPLAYstr);
+    spdlog::info("PLAY: {}", respPLAY.getStatus());
+
+    if(respPLAY.getStatus() == 200){
+        // receive PCMU audio over RTP - for now fixed number of datagrams written to a file
+        RTPSession rtp_session(scanner_ip, actual_rtp_port);
+        rtp_session.run();
+    }
 
     // TEARDOWN - send
     auto reqTEARDOWN = make_unique<RTSPRequest>(RTSPMethod::TEARDOWN, scanner_ip, user_agent, seq++);
-    reqTEARDOWN->setSessionId("9999999");  //TODO: get this value from the response to SETUP
+    reqTEARDOWN->setSessionId(current_sessionID);
     spdlog::info("\r\n"+reqTEARDOWN->getString());
     myTCP.send(reqTEARDOWN->getString());
 
     spdlog::info("Exiting.");
 }
+
 
 

@@ -6,18 +6,11 @@
 #include <sstream>
 #include <cctype>
 #include <spdlog/spdlog.h>
-#include <scannerclient/RTSPRequest.h>
-#include <scannerclient/RTSPResponse.h>
+#include "utils/utils.h"
+#include "scannerclient/RTSPRequest.h"
+#include "scannerclient/RTSPResponse.h"
 
-auto trim = [](string& field){
-    field.erase(field.begin(), std::find_if(field.begin(), field.end(), [](int ch) {
-      return !std::isspace(ch);
-    }));
-    field.erase(std::find_if(field.rbegin(), field.rend(), [](int ch) {
-      return !std::isspace(ch);
-    }).base(), field.end());
-
-};
+using namespace std;
 
 namespace sc {
 
@@ -57,6 +50,9 @@ void RTSPResponse::parse() {
         }
     }
 
+    if(m_method_type == RTSPMethod::SETUP){
+        parseTransport();
+    }
 }
 
 void RTSPResponse::parseSDP(stringstream& sresponse){
@@ -82,6 +78,42 @@ void RTSPResponse::parseStatus(const string statusline){
     spdlog::debug("version:{} status:{}", m_version, m_status);
 }
 
+void RTSPResponse::parseTransport(){
+    string transport = getHdrFld(RTSPHdrFld::TRANSPORT);
+    string token, field, value;
+    spdlog::debug("parseRTPPort() - Transport:{}", transport);
+    stringstream sline(transport);
+    vector<string> tokens;
+
+    while(getline(sline, token, ';')){
+        tokens.push_back(token);
+    }
+
+    for(string t: tokens){
+        spdlog::debug("Transport token:{}", t);
+        int equalPos = t.find_first_of('=');
+        if(equalPos != string::npos){
+            field = t.substr(0, equalPos);
+            value = t.substr(equalPos + 1);
+            spdlog::debug("field:{}   value:{}", field, value);
+
+            // UDP port we will receive unicast RTP stream on
+            if(field == "client_port"){
+                m_RTP_port = stoi(value);
+                spdlog::debug("client_port:{}", m_RTP_port);
+            }
+
+        }
+    }
+
+}
+
+string RTSPResponse::getAudioChannel() const{
+    if(m_sdp != nullptr){
+        return m_sdp->getAudioChannel();
+    }
+    return "";
+}
 
 int RTSPResponse::getStatus() const {
     return m_status;
@@ -93,6 +125,14 @@ string RTSPResponse::getVersion() const {
 
 int RTSPResponse::getCSeq() const {
     return stoi(getHdrFld(RTSPHdrFld::CSEQ));
+}
+
+string RTSPResponse::getSession() const {
+    return getHdrFld(RTSPHdrFld::SESSION);
+}
+
+int RTSPResponse::getRTPPort() const{
+    return m_RTP_port;
 }
 
 // returns empty string if not found
