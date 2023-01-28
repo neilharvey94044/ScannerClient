@@ -6,24 +6,36 @@
 #include <fmt/format.h>
 #include <spdlog/spdlog.h>
 #include <tinyxml2/tinyxml2.h>
+#include <rtaudio/RtAudio.h>
 
 
 #include "scannerclient/TCPSocket.h"
 #include "scannerclient/UDPSocket.h"
 #include "scannerclient/RTSPRequest.h"
 #include "scannerclient/RTSPResponse.h"
+#include "scannerclient/RTSPSession.h"
 #include "scannerclient/RTPSession.h"
+#include "audio/ISC_Audio.h"
+#include "audio/SC_RTaudio.h"
 #include "tests/response_test_data.h"
+#include "status/ScannerStatus.h"
 
 using namespace tinyxml2;
 using namespace std;
 using namespace sc;
 
-void Test1_UDP_XML( string scanner_ip, int scanner_udp_port);  // forward
+void Test1_UDP_XML( string scanner_ip, int scanner_udp_port);  // Send GSI command to scanner and parse response
 void Test2_TCP_RTSP_OPTIONS(string scanner_ip, int scanner_rtsp_port,  string user_agent, int seq);  // forward
 void Test3_Verify_RTSP_Response_Parsing();  // forward
 void Test4_RTSP_Pseudo_Handshake();
 void Test5_RTSP_Handshake(string scanner_ip, int scanner_rtsp_port,  string user_agent, string rtp_port);  // forward
+void Test6_Play_Audio_From_Scanner();
+void Test7_Play_Audio_From_Scanner();  //encapsulated in a SC_RTPaudio class
+void Test8_UDP_Push_Scanner_Info(string scanner_ip, int scanner_udp_port);  // Send PSI command to scanner and parse response
+void Test9_UDP_Push_Scanner_Info_Threaded();  // Send PSI command to scanner and parse response using thread
+void Test10_UDP_Non_Blocking();  // Test non-blocking UDP
+
+
 
 
 
@@ -32,11 +44,13 @@ int main(int argc, char* argv[])
 
     //spdlog::set_pattern();  TODO:
     spdlog::set_level(spdlog::level::debug);
+    //spdlog::set_pattern("[%H:%M:%S] [%L] [%#  %s] [thread %t] %v");
+    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] %^[%l]%$ [%t] %v");
     spdlog::info("Testing starting.");
 
     int seq = 2;
 
-    string scanner_ip {"192.168.0.174"};
+    string scanner_ip {"192.168.0.173"};
     int scanner_rtsp_port {554};
     int scanner_udp_port {50536};
     string user_agent {"ScannerClient/1.0"};
@@ -46,8 +60,12 @@ int main(int argc, char* argv[])
     // Test2_TCP_RTSP_OPTIONS(scanner_ip, scanner_rtsp_port, user_agent, seq);  // CAUTION:  hangs scanner
     // Test3_Verify_RTSP_Response_Parsing();
     // Test4_RTSP_Pseudo_Handshake();
-     Test5_RTSP_Handshake(scanner_ip, scanner_rtsp_port, user_agent, hint_rtp_port);
-    // Test6_PCMU_Algorithm();
+    // Test5_RTSP_Handshake(scanner_ip, scanner_rtsp_port, user_agent, hint_rtp_port);
+    // Test6_Play_Audio_From_Scanner();
+    // Test7_Play_Audio_From_Scanner();
+    // Test8_UDP_Push_Scanner_Info(scanner_ip, scanner_udp_port);
+    // Test9_UDP_Push_Scanner_Info_Threaded();  // Send PSI command to scanner and parse response using thread
+    Test10_UDP_Non_Blocking();  // Test non-blocking UDP
 
     spdlog::info("Testing ended.");
 }
@@ -79,8 +97,6 @@ void Test1_UDP_XML( string scanner_ip, int scanner_udp_port){
     if(doc.ErrorID()){
         spdlog::error("Tinyxml2 parse error:{} ({})", doc.ErrorName(), doc.ErrorID());
         return;
-
-    spdlog::info("Exiting.");
     }
 
     spdlog::debug("Printing XMLDocument");
@@ -313,12 +329,12 @@ void Test5_RTSP_Handshake( string scanner_ip, int scanner_rtsp_port, string user
     string respPLAYstr = myTCP.recv();
     RTSPResponse respPLAY(RTSPMethod::PLAY, respPLAYstr);
     spdlog::info("PLAY: {}", respPLAY.getStatus());
-
+/* 
     if(respPLAY.getStatus() == 200){
         // receive PCMU audio over RTP - for now fixed number of datagrams written to a file
         RTPSession rtp_session(scanner_ip, actual_rtp_port);
         rtp_session.run();
-    }
+    } */
 
     // TEARDOWN - send
     auto reqTEARDOWN = make_unique<RTSPRequest>(RTSPMethod::TEARDOWN, scanner_ip, user_agent, seq++);
@@ -327,6 +343,232 @@ void Test5_RTSP_Handshake( string scanner_ip, int scanner_rtsp_port, string user
     myTCP.send(reqTEARDOWN->getString());
 
     spdlog::info("Exiting.");
+}
+
+
+// RTAudio Callback Function
+int callback( void *outputBuffer, void * /*inputBuffer*/, unsigned int nBufferFrames,
+            double /*streamTime*/, RtAudioStreamStatus /*status*/, void *data )
+{
+    spdlog::debug("In callback");
+    // The buffer comes in as a pointer to a shared_ptr, we want the actual shared_ptr
+    std::shared_ptr<AudioBuffer> audio_buf_ptr =  (*(std::shared_ptr<AudioBuffer>*) data);
+
+    //TODO: optimize this; inefficient because getAudio() was designed for a container
+    rtpbuf buf;
+    audio_buf_ptr->getAudio(buf);
+    unsigned short* outbuf_ptr = (unsigned short*) outputBuffer;
+    for(unsigned short s: buf){
+        *outbuf_ptr++ = s;
+    }
+
+    if(audio_buf_ptr->getStopped()){
+        spdlog::debug("callback stopped");
+        return 2;
+    }
+
+  return 0;
+}
+
+
+void Test6_Play_Audio_From_Scanner(){
+
+    RtAudio dac;
+    unsigned int channels=1, sample_rate=8000, bufferFrames=320, offset = 0, device = 0;
+    if ( dac.getDeviceCount() < 1 ) {
+        spdlog::error("\nNo audio devices found! Check your RtAudio build script.\n");
+        exit( 0 );
+    }
+    device = dac.getDefaultOutputDevice();
+    spdlog::debug("Audio output device:{}", device);
+
+    RtAudio::StreamParameters oParams;
+    oParams.deviceId = device;
+    oParams.nChannels = channels;
+    oParams.firstChannel = offset;
+
+    try {
+        shared_ptr<RTSPSession> rtsp_session = make_shared<RTSPSession>();
+        shared_ptr<AudioBuffer> audio_buffer_ptr = rtsp_session->getAudioBuffer();
+        rtsp_session->start();
+        if(audio_buffer_ptr != nullptr){
+            dac.openStream( &oParams, NULL, RTAUDIO_SINT16, sample_rate, &bufferFrames, &callback, (void *)&audio_buffer_ptr );
+            spdlog::debug("Opened Audio Stream");
+            dac.startStream();
+            spdlog::debug("Started Audio Stream");
+
+            spdlog::debug("Stopped RTSPSession");
+        }
+        int stop;
+        cin >> stop;
+
+        rtsp_session->stop();
+
+    }
+    catch ( RtAudioError& e ) {
+        spdlog::error("RtAudio Error: {}", e.getMessage());
+  }
+
+}
+
+void Test7_Play_Audio_From_Scanner(){
+    auto audio = make_unique<SC_RTaudio>();
+
+    // will use this for GUI support to allow picking device
+    auto devices = audio->getOutputDevices();
+    for(auto d: devices){
+        spdlog::info("Device ID:[{}] Name:[{}] Channels:[{}] Default:[{}]", 
+        std::get<0>(d), 
+        std::get<1>(d), 
+        std::get<2>(d), 
+        std::get<3>(d) );
+
+        if(std::get<3>(d)){ // pick the default device for this test
+            audio->setAudioDevice(std::get<0>(d));
+        }
+    }
+
+
+    audio->start();
+
+    spdlog::debug("Exited audio->start()");
+
+    // pause here waiting for keyboard input of an integer
+    int stop;
+    cin >> stop;
+    spdlog::debug("Exited cin pause");
+
+    audio->stop();
+
+    spdlog::debug("After audio->stop()");
+
+}
+
+
+void Test8_UDP_Push_Scanner_Info(std::string scanner_ip, int scanner_udp_port){
+    spdlog::info("Entering Test8_UDP_Push_Scanner_Info()");
+
+    string msgout {"PSI,200\r"};
+    auto myUDP = make_unique<sc::UDPSocket>(scanner_ip, scanner_udp_port);
+
+    spdlog::info("calling sendto()");
+    myUDP->sendto(msgout);
+
+    spdlog::info("Initial ok response");
+    string udpResponse = myUDP->recvfrom();
+    spdlog::debug("PSI Response:{}", udpResponse);
+    if(!udpResponse.find("OK")){
+        spdlog::error("Did not receive OK from PSI Request");
+        return;
+    }
+
+    for(int i=0; i < 2000; i++){
+        spdlog::info("calling recvfrom()");
+        string udpResponse = myUDP->recvfrom();
+ 
+         // remove extraneous control characters
+        // TODO: use an algorithm and get rid of stripctrlchars()
+        span buf(udpResponse);
+        stripctrlchars(buf);
+
+        //spdlog::info("PSI Response:{}", udpResponse);
+
+        udpResponse.erase(0, udpResponse.find("<?xml"));  //remove beginning of response that is not XML
+
+        spdlog::info("parsing XML response");
+        XMLDocument doc;
+        doc.Parse(udpResponse.c_str(), udpResponse.size());
+
+        if(doc.ErrorID()){
+            spdlog::error("Tinyxml2 parse error:{} ({})", doc.ErrorName(), doc.ErrorID());
+            //return;
+        }
+        // get top level element
+        XMLElement* scannerInfo = doc.FirstChildElement( "ScannerInfo" );
+        if(scannerInfo == nullptr){
+            spdlog::error("ScannerInfo not found in XML.");
+            continue;
+            //return;
+        }
+        // get View Description
+        std::string overWriteText{};
+        XMLElement *viewDescription = nullptr, *overWrite = nullptr;
+        viewDescription = scannerInfo->FirstChildElement( "ViewDescription" );
+        if(viewDescription != nullptr){
+            overWrite = viewDescription->FirstChildElement("OverWrite");
+            if(overWrite != nullptr){
+                overWriteText = overWrite->Attribute("Text");
+            }
+        }
+
+
+        // If we don't get "ViewDescription/OverWrite/Text" the scanner has an active signal
+        if(overWriteText.empty()){
+            XMLPrinter printer;
+            doc.Print( &printer );
+            cout << printer.CStr() << endl << endl;
+        }
+        else cout << "Scanning..." << endl;
+
+    }
+
+
+}
+
+void Test9_UDP_Push_Scanner_Info_Threaded(){
+    spdlog::info("Starting Test9_UDP_Push_Scanner_Info_Threaded");
+
+    ScannerStatus ss;
+
+    ss.start([] (shared_ptr<SC_STATUS> cs){
+/*         if(cs->Playing){
+            cout    << "============================================" << endl
+            << "Mode \t\t"                  << cs->Mode << endl
+            << "V_Screen \t\t"              << cs->VScreen << endl
+            << "MonitorListName \t\t"       << cs->MonitorListName << endl
+            << "SystemName \t\t"            << cs->SystemName << endl
+            << "DepartmentName \t\t"        << cs->DepartmentName << endl
+            << "ConvFrequencyName \t\t"     << cs->ConvFrequencyName << endl
+            << "ConvFrequencySvcType \t\t"  << cs->ConvFrequencySvcType << endl
+            << "ConvFrequencyMod \t\t"      << cs->ConvFrequencyMod << endl
+            << "PropSig \t\t"               << cs->PropSig << endl
+            << "PropP25Status \t\t"         << cs->PropP25Status << endl
+            << "TS_SiteName \t\t"           << cs->TS_SiteName << endl
+            << "TS_SiteFreq \t\t"           << cs->TS_SiteFreq << endl
+            << "TS_TGID \t\t"               << cs->TS_TGID << endl
+            << "OverWriteText \t\t"         << cs->OverWriteText << endl
+            << "Playing \t\t"               << cs->Playing << endl;
+        }
+        else{ 
+            cout << cs->OverWriteText << endl;
+        } */
+
+        spdlog::debug("Channel:{}  Playing:{}", cs->ConvFrequencyName, cs->Playing);
+    }
+    );
+
+    int stop{0};
+    cin >> stop;
+
+    ss.stop();
+}
+
+void Test10_UDP_Non_Blocking(){
+    string msgout {"GSI\r"};
+    string scanner_ip {"192.168.0.173"};
+    int scanner_socket {50536};
+
+    spdlog::info("Test starting...");
+    auto myUDP = make_unique<sc::UDPSocket>(scanner_ip, scanner_socket);
+
+    spdlog::info("calling sendto()");
+    myUDP->sendto(msgout);
+
+    spdlog::info("calling recvfrom()");
+    spdlog::info("Message Received: {}", myUDP->recvfrom());
+
+    spdlog::info("Test ending...");
+
 }
 
 

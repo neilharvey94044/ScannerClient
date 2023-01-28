@@ -45,6 +45,13 @@ string RTSPRequest::getString() const {
                                 fmt::format("Session: {}" "\r\n\r\n", m_session_id);
 
             break;
+        case RTSPMethod::KEEPALIVE:
+             return             fmt::format("GET_PARAMETER rtsp://{}:{}/au:scanner.au/ RTSP/1.0" "\r\n", m_server_ip, m_server_port) +
+                                fmt::format("CSeq: {}" "\r\n", m_cseq) +
+                                fmt::format("User-Agent: {}" "\r\n", m_user_agent) +
+                                fmt::format("Session: {}" "\r\n\r\n", m_session_id);
+
+            break;
         default:
             return "";
     }

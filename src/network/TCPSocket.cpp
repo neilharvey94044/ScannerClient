@@ -11,7 +11,14 @@ TCPSocket::TCPSocket(std::string scanner_ip, int scanner_port) :
             m_scanner_ip {scanner_ip},
             m_scanner_port{scanner_port},
             Socket(SOCK_STREAM, IPPROTO_TCP)
-        { }
+        { 
+            int flag = 1, sockerr = 0;
+
+            sockerr = setsockopt(m_socket, SOL_SOCKET, SO_KEEPALIVE, (char *) &flag, sizeof(flag) );
+            if (sockerr != 0) {
+                spdlog::error("setsockopt() failed. {}", GETSOCKETERRNO());
+            }
+        }
 
 int TCPSocket::connect() {
             spdlog::debug("Connecting");
@@ -19,14 +26,14 @@ int TCPSocket::connect() {
             m_server_addr.sin_port = htons(m_scanner_port);
             inet_pton(AF_INET, m_scanner_ip.c_str(), &(m_server_addr.sin_addr));
             int sockerr = ::connect(m_socket, (const struct sockaddr *) &m_server_addr, sizeof(m_server_addr));
-            if (sockerr < 0) {
+            if (sockerr != 0) {
                 spdlog::error("connect() failed. {}", GETSOCKETERRNO());
             }
             return sockerr;
         }
 
 int TCPSocket::send(std::string msgout) {
-            spdlog::debug("Sending: {}", msgout);
+            spdlog::debug("Sending: \n{}", msgout);
             int bytes_sent = ::send(m_socket, msgout.c_str(), msgout.length(), 0);
             if (bytes_sent < 0) {
                 spdlog::error("sendto() failed. {}", GETSOCKETERRNO());

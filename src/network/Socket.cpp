@@ -36,14 +36,13 @@ void stripctrlchars(span<char>& msg) {
 Socket::Socket(int soctype, IPPROTO protocol ) {
                     
                 #if defined(_WIN32)
-                        spdlog::info("Initializing Windows WSA");
+                        spdlog::debug("Initializing Windows WSA");
                         WSADATA d;
                         if (WSAStartup(MAKEWORD(2, 2), &d)) {
                             spdlog::error("Failed to initialize WSA");
                         }
                 #endif
 
-                spdlog::info("Creating socket...\n");
                 m_socket = ::socket(PF_INET, soctype, protocol);
                 if (!ISVALIDSOCKET(m_socket)) {
                     spdlog::error("Error returned from socket(). {}", GETSOCKETERRNO());

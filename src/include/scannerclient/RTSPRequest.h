@@ -15,7 +15,8 @@ enum RTSPMethod {
             DESCRIBE,
             SETUP,
             PLAY,
-            TEARDOWN
+            TEARDOWN,
+            KEEPALIVE
         };
 
 class RTSPRequest {
