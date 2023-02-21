@@ -2,18 +2,20 @@
 # SPDX-License-Identifier: GPL-2.0+
 
 cmake_minimum_required (VERSION 3.22)
+SET(CMAKE_CONFIGURATION_TYPES ${CMAKE_BUILD_TYPE} CACHE STRING "" FORCE)
+
 Project (ScannerClient VERSION 0.01)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/macros.cmake")
 
 #default to Release build
 #if(NOT CMAKE_BUILD_TYPE)
-#	set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+	#set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 #endif()
 
 
-#print_environment_info()
-#print_compiler_info()
+print_environment_info()
+print_compiler_info()
 
 #---------------------- rtAudio --------------------------
 
@@ -48,7 +50,8 @@ ENDIF (WIN32)
  #-------------------- wxWidgets ----------------------------
 # Create environment variables or use these to help "find_package"
 #SET(wxWidgets_ROOT_DIR D:/dev/repos/wxWidgets-3.2.1)
-SET(wxWidgets_CONFIGURATION mswud)
+SET(wxWidgets_CONFIGURATION mswu)
+#SET(wxWidgets_CONFIGURATION mswud)
 
 # Request the required wxWidgets libs
 #find_package(wxWidgets 3.2.1 REQUIRED COMPONENTS core base )
