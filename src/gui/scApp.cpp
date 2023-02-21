@@ -65,9 +65,9 @@ void SCApp::initializeLogger(){
      auto custom_logger = spdlog::basic_logger_mt<spdlog::async_factory>("Custom", "sc.log");
     //auto custom_logger = spdlog::basic_logger_mt("Custom", "sc.log", true);
     spdlog::set_default_logger(custom_logger);
-    spdlog::set_level(spdlog::level::debug);
+    spdlog::set_level(spdlog::level::info);
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] %^[%l]%$ [%t] %v");
-    spdlog::flush_on(spdlog::level::debug);
+    spdlog::flush_on(spdlog::level::info);
     spdlog::flush_every(std::chrono::seconds(10)); //doesn't seem to work
     spdlog::debug("Logger initialized");
 }
