@@ -1,4 +1,5 @@
 // Copyright (c) Neil D. Harvey
+// SPDX-License-Identifier: GPL-2.0+
 
 #include <spdlog/spdlog.h>
 #include "audio/AudioBuffer.h"

@@ -1,10 +1,11 @@
 // Copyright (c) Neil D. Harvey
+// SPDX-License-Identifier: GPL-2.0+
 
 #include <memory>
 #include <string>
 #include <span>
 #include <spdlog/spdlog.h>
-#include "scannerclient/UDPSocket.h"
+#include "network/UDPSocket.h"
 
 namespace sc {
 
@@ -12,7 +13,8 @@ namespace sc {
 UDPSocket::UDPSocket(std::string scanner_ip, int scanner_port):
             m_scanner_ip{scanner_ip},
             m_scanner_port{scanner_port},
-            Socket(SOCK_DGRAM, IPPROTO_UDP)
+            Socket(SOCK_DGRAM, IPPROTO_UDP),
+            m_pConfig(SC_CONFIG::get())
             { }
 
 // Used to receive RTP PCMU audio
@@ -37,10 +39,10 @@ int UDPSocket::bind(){
 
     if (::bind(m_socket, bind_address->ai_addr, bind_address->ai_addrlen)) {
         spdlog::error("bind() failed with Socket Error {}", GETSOCKETERRNO());
-        return 1;
+        return 0;
     }
 
-    return 0;
+    return 1;
 }
 
 int UDPSocket::sendto(std::string msgout){
@@ -59,6 +61,13 @@ int UDPSocket::sendto(std::string msgout){
         }
 
 std::string UDPSocket::recvfrom() {
+            int pollresponse{0};
+            pollresponse = pollForRead();
+            if(pollresponse == Socket::POLLRET::STIMEOUT){
+                spdlog::error("No data available after {} ms", m_pConfig->socket_read_wait_ms);
+                return "";
+            }
+
             memset(&m_msgin, 0x00, sizeof(m_msgin));
             int bytes_received = ::recvfrom(m_socket, m_msgin, sizeof(m_msgin), 0, (struct sockaddr *) &m_in_address, &m_in_address_len);
             if (bytes_received < 1) {

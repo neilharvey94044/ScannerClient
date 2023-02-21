@@ -1,10 +1,12 @@
 // Copyright (c) Neil D. Harvey
+// SPDX-License-Identifier: GPL-2.0+
+
 
 #include <spdlog/spdlog.h>
 #include <fmt/format.h>
 #include <string>
 #include <iostream>
-#include "scannerclient/RTSPRequest.h"
+#include "network/RTSPRequest.h"
 
 using namespace std;
 

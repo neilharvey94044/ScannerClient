@@ -1,4 +1,5 @@
 // Copyright (c) Neil D. Harvey
+// SPDX-License-Identifier: GPL-2.0+
 
 // Provides buffering between receiving audio and playing audio.
 // Create on the heap and provide a pointer to both the thread
@@ -14,10 +15,10 @@
 #include <vector>
 #include <mutex>
 #include <atomic>
-#include "scannerclient/sc.h"
 
 namespace sc {
 
+typedef std::array<unsigned short, 320> rtpbuf;
 
 class AudioBuffer {
 

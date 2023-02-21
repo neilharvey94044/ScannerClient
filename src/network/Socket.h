@@ -1,4 +1,5 @@
 // Copyright (c) Neil D. Harvey
+// SPDX-License-Identifier: GPL-2.0+
 
 #pragma once
 
@@ -36,6 +37,7 @@ extern "C" {
 #include <string>
 #include <span>
 #include <memory>
+#include "config/SC_CONFIG.h"
 
 namespace sc {
 
@@ -44,12 +46,24 @@ void stripctrlchars(std::span<char>& msg);
 
 class Socket {
     public:
-        virtual ~Socket();
+
+    enum POLLRET {
+        SREADY,     // ready to receive
+        STIMEOUT,   // timed out - no data
+        SERROR      // socket error occurred
+    };
+
+    virtual POLLRET getPollReturn();
+    virtual ~Socket();
     
     //TODO: make these member variables private
     protected:
         SOCKET m_socket;
         Socket(int soctype, IPPROTO protocol);
+        std::unique_ptr<SC_CONFIG> m_pConfig{nullptr};
+        virtual int pollForRead();
+        virtual int pollForWrite();
+        POLLRET m_pollret{POLLRET::SREADY};
 };
 
 } // sc

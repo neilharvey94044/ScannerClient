@@ -1,4 +1,5 @@
 // Copyright (c) Neil D. Harvey
+// SPDX-License-Identifier: GPL-2.0+
 
 extern "C" {
 #if defined(_WIN32)
@@ -19,12 +20,12 @@ extern "C" {
 #include <span>
 #include <ranges>
 #include <thread>
+#include <future>
 #include <fmt/format.h>
 #include <spdlog/spdlog.h>
-#include "scannerclient/sc.h"
 #include "audio/AudioBuffer.h"
 #include "network/g711.h"
-#include "scannerclient/RTPSession.h"
+#include "network/RTPSession.h"
 
 
 namespace sc{
@@ -61,22 +62,37 @@ void RTPSession::writeraw(std::string dgram){
     }
 }
 
-void RTPSession::start(){
-    m_rtp_thread = std::make_unique<std::thread>(&RTPSession::execute, this);
+void RTPSession::start(std::promise<bool> rtp_success_promise){
+    m_rtp_thread = std::make_unique<std::thread>(&RTPSession::execute, this, std::move(rtp_success_promise));
 }
 
-void RTPSession::execute(){
+void RTPSession::execute(std::promise<bool> rtp_success_promise){
     spdlog::debug("RTPSession::execute entered");
     m_running = true;
 
     // bind to the listen_port obtained from RTSP
-    m_rtp_sock.bind();
+    if(!m_rtp_sock.bind()){
+        spdlog::error("Failed bind in RTPSession");
+        m_running = false;
+        m_audio_buf_ptr->setStopped(true);
+        rtp_success_promise.set_value(false);
+        return;
+    }
+
+    rtp_success_promise.set_value(true);
 
     // receive datagrams until signalled to stop
     while(m_running) {
         spdlog::debug("About to recvfrom RTP");
         auto pcm_out_ptr = m_audio_buf_ptr->getBuf();
         std::string pcmu_in = m_rtp_sock.recvfrom();
+        if(m_rtp_sock.getPollReturn() == Socket::POLLRET::STIMEOUT){
+            spdlog::error("Network Timeout on RTP receive");
+            m_audio_buf_ptr->setStopped(true);
+            m_running = false;
+            break;
+        }
+
         RTPHDRexpanded hdr = formatHeader(std::span<char>(pcmu_in));
         spdlog::debug("Version:{} Padding_bit:{} Extension_bit:{} CSRC_count:{} Marker_bit:{} Payload_type:{} Sequence#:{} Timestamp:{} SSRC:{}",
                             hdr.version, hdr.padding, hdr.extension, hdr.CSRCcount, hdr.marker, hdr.payload_type, hdr.sequence, hdr.timestamp, hdr.SSRC );
@@ -91,9 +107,11 @@ void RTPSession::execute(){
 }
 
 void RTPSession::stop(){
-    spdlog::info("RTPSession::stop invoked");
+    spdlog::debug("RTPSession::stop invoked");
     m_running = false;
-    m_rtp_thread->join();
+    if(m_rtp_thread != nullptr && m_rtp_thread->joinable()){
+        m_rtp_thread->join();
+    }
 }
 
 

@@ -1,4 +1,5 @@
 // Copyright (c) Neil D. Harvey
+// SPDX-License-Identifier: GPL-2.0+
 
 #include <unordered_map>
 #include <vector>
@@ -7,8 +8,8 @@
 #include <cctype>
 #include <spdlog/spdlog.h>
 #include "utils/utils.h"
-#include "scannerclient/RTSPRequest.h"
-#include "scannerclient/RTSPResponse.h"
+#include "network/RTSPRequest.h"
+#include "network/RTSPResponse.h"
 
 using namespace std;
 
@@ -75,7 +76,7 @@ void RTSPResponse::parseStatus(const string statusline){
     }
     else m_status = -1;
 
-    spdlog::debug("version:{} status:{}", m_version, m_status);
+    spdlog::debug("RTSPResponse Method Type:{} version:{} status:{}",m_method_type, m_version, m_status);
 }
 
 void RTSPResponse::parseTransport(){

@@ -1,4 +1,3 @@
-// Copyright (c) Neil D. Harvey
 
 #pragma once
 
@@ -7,7 +6,7 @@
  
 namespace sc {
 size_t ulaw_expand (const std::string logbuf, std::span<unsigned short> linbuf);
-unsigned short linear16FromuLaw(unsigned char uLawByte);
+unsigned short itu_expand(unsigned char login);
 
 
 } // namespace

@@ -4,17 +4,17 @@
 
 ### Build Steps
 - To generate for Debug build:
-```bash
-cmake -S ./src -B ./build -DCMAKE_BUILD_TYPE=Debug
-```
+
+cmake -S . -B ./build -DCMAKE_BUILD_TYPE=Debug
+
 - To generate for Release build (default):
-```bash
+
 cmake -S ./src -B ./build
-```
+
 - To build:
-```bash
+
 cmake --build ./build
-```
+
 Note: do the above from the top level ScannerClient directory.
 
 ### RFCs and Protocols

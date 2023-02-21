@@ -1,9 +1,10 @@
 // Copyright (c) Neil D. Harvey
+// SPDX-License-Identifier: GPL-2.0+
 
 #include <cctype>
 #include <spdlog/spdlog.h>
-#include <scannerclient/MediaDescription.h>
-#include <scannerclient/SessionDescription.h>
+#include <network/MediaDescription.h>
+#include <network/SessionDescription.h>
 
 using namespace std;
 

@@ -1,12 +1,14 @@
 // Copyright (c) Neil D. Harvey
+// SPDX-License-Identifier: GPL-2.0+
 
 #include <memory>
 #include <string>
 #include <tuple>
+#include <future>
 #include <spdlog/spdlog.h>
 
-#include "scannerclient/RTSPSession.h"
-#include "scannerclient/RTPSession.h"
+#include "network/RTSPSession.h"
+#include "network/RTPSession.h"
 #include "audio/AudioBuffer.h"
 #include "SC_RTaudio.h"
 
@@ -18,14 +20,21 @@ int rtaudio_callback( void *outputBuffer, void * /*inputBuffer*/, unsigned int n
 
 
 void SC_RTaudio::start(){
+    if(m_started){
+        spdlog::error("Attempt to start an active SC_RTauidio.  Invoke stop() first.");
+        return;
+    }
+    m_started = true;
     if ( m_dac.getDeviceCount() < 1 ) {
         spdlog::error("\nNo audio devices found! Check your RtAudio build script.\n");
+        m_started = false;
         return;
     }
     auto d_info =  m_dac.getDeviceInfo(m_audio_device);
     spdlog::debug("Audio output device:{}", d_info.name);
     if(d_info.outputChannels < 1){
         spdlog::error("Device has no output channels");
+        m_started = false;
         return;
     }
 
@@ -35,13 +44,24 @@ void SC_RTaudio::start(){
     m_oParams.nChannels = m_channels;
     m_oParams.firstChannel = 0;  // offset
 
-    // will start two threads, one for RTSP and one for RTP
-    m_rtsp_session_ptr = std::make_shared<RTSPSession>();
+    m_rtsp_session_ptr = std::make_unique<RTSPSession>();
     m_audio_buffer_ptr = m_rtsp_session_ptr->getAudioBuffer();
     m_audio_buffer_ptr->setChannels(m_channels);
+
     spdlog::debug("Before starting RTSPSession");
-    m_rtsp_session_ptr->start();
-    spdlog::debug("After starting RTSPSession");
+    // RTSPSession will start two threads, one for RTSP and one for RTP
+    m_connection_fail = false;
+    std::promise<bool> rtsp_success_promise;
+    std::future<bool> rtsp_success_future = rtsp_success_promise.get_future();
+    m_rtsp_session_ptr->start(std::move( rtsp_success_promise));
+    if(!rtsp_success_future.get()){
+        spdlog::error("Unable to start RTSP Session");
+        m_rtsp_session_ptr->stop();
+        m_connection_fail = true;
+        m_started = false;
+        return;
+    }
+
 
     try {
         if(m_audio_buffer_ptr != nullptr){
@@ -61,7 +81,21 @@ void SC_RTaudio::start(){
 
 void SC_RTaudio::stop(){
         spdlog::debug("Entering SC_RTPaudio::stop()");
-        m_rtsp_session_ptr->stop();
+        m_started = false;
+        if(m_rtsp_session_ptr != nullptr){
+            m_rtsp_session_ptr->stop();
+            spdlog::debug("After RTSPSession::stop()");
+        }
+        m_dac.closeStream();
+        spdlog::debug("After m_dac.closeStream()");
+}
+
+bool SC_RTaudio::isStarted() const {
+    return m_started;
+}
+
+bool SC_RTaudio::connectionFail() const {
+    return m_connection_fail;
 }
 
 void SC_RTaudio::mute(){
@@ -72,7 +106,7 @@ void SC_RTaudio::unmute(){
 
 }
 
-std::vector< std::tuple<int /* device ID */, std::string /* device name */, int /* # of channels */, bool /* default? */> > SC_RTaudio::getOutputDevices() {
+std::vector< std::tuple<int /* device ID */, std::string /* device name */, int /* # of channels */, bool /* default? */> > SC_RTaudio::getAudioDevices() {
     int device_count = m_dac.getDeviceCount();
     std::vector< std::tuple<int, std::string, int, bool> > devices;
     for(int d = 0; d < device_count; d++){
@@ -86,6 +120,10 @@ std::vector< std::tuple<int /* device ID */, std::string /* device name */, int 
 
 void SC_RTaudio::setAudioDevice(int audio_device){
     m_audio_device = audio_device;
+}
+
+unsigned int SC_RTaudio::getDefaultAudioDevice(){
+    return m_dac.getDefaultOutputDevice();
 }
 
 

@@ -1,4 +1,5 @@
 // Copyright (c) Neil D. Harvey
+// SPDX-License-Identifier: GPL-2.0+
 
 #include <memory>
 #include <string>
@@ -13,23 +14,38 @@ using namespace tinyxml2;
 
 namespace sc {
 
-void ScannerStatus::start( void (*outfunc)(shared_ptr<SC_STATUS> cs) ){
+ScannerStatus::ScannerStatus() :
+                m_pConfig{SC_CONFIG::get()}
+                {}
+
+void ScannerStatus::start( std::function<void(std::shared_ptr<SC_STATUS> cs)> outfunc){
+    if(m_started){
+        spdlog::error("Attempt to start an active ScannerStatus. Invoke stop() first.");
+        return;
+    }
+    m_started = true;
     m_status_thread = std::make_unique<std::thread>(&ScannerStatus::execute, this, outfunc );
 }
 
-void ScannerStatus::execute( void (*outfunc)(shared_ptr<SC_STATUS> cs) ){
+void ScannerStatus::execute( std::function<void(std::shared_ptr<SC_STATUS> cs)> outfunc){
     spdlog::debug("Entering ScannerStatus::execute()");
+    UDPSocket udp_socket(m_pConfig->ip_address, m_pConfig->status_udp_port);
+
+    // when scanner stops sending status messages come here to start over
+    restart:
+
     m_running = true;
 
     string msgout = fmt::format("PSI,{}\r", m_period);
 
     spdlog::debug("calling sendto()");
-    m_udp_socket.sendto(msgout);
+    udp_socket.sendto(msgout);
 
-    string udpResponse = m_udp_socket.recvfrom();
+    string udpResponse = udp_socket.recvfrom();
+        
     spdlog::debug("PSI Response:{}", udpResponse);
-    if(!udpResponse.find("OK")){
-        spdlog::error("Did not receive OK from PSI Request");
+    if(udpResponse.find("OK") == string::npos && udpResponse.find("PSI,<XML>") == string::npos){
+        spdlog::error("Did not receive OK or valid XML from PSI Request");
         return;
     }
     XMLDocument doc;
@@ -39,7 +55,12 @@ void ScannerStatus::execute( void (*outfunc)(shared_ptr<SC_STATUS> cs) ){
         doc.Clear();
 
         spdlog::debug("Calling recvfrom()");
-        string udpResponse = m_udp_socket.recvfrom();
+        string udpResponse = udp_socket.recvfrom();
+        if(udp_socket.getPollReturn() == Socket::POLLRET::STIMEOUT){
+            spdlog::debug("ScannerStatus resending PSI command");
+            goto restart;       // keeps the current thread and restarts PSI
+        }
+
  
          // remove extraneous control characters
         // TODO: use an algorithm and get rid of stripctrlchars()
@@ -47,7 +68,7 @@ void ScannerStatus::execute( void (*outfunc)(shared_ptr<SC_STATUS> cs) ){
         span buf(udpResponse);
         stripctrlchars(buf);
 
-        //spdlog::debug("PSI Response:{}", udpResponse);
+        spdlog::debug("PSI Response:{}", udpResponse);
 
         //TODO: optimize the erase
         udpResponse.erase(0, udpResponse.find("<?xml"));  //remove beginning of response that is not XML
@@ -77,11 +98,6 @@ shared_ptr<SC_STATUS> ScannerStatus::produceStatus(XMLDocument& doc){
 
     auto cs = make_shared<SC_STATUS>(); // current status
 
-    // for now output the entire XML
-  /*   XMLPrinter printer;
-    doc.Print( &printer );
-    spdlog::info(printer.CStr()); */
-
     // get top level element
     XMLElement* scannerInfo = doc.FirstChildElement( "ScannerInfo" );
     if(scannerInfo == nullptr){
@@ -90,10 +106,9 @@ shared_ptr<SC_STATUS> ScannerStatus::produceStatus(XMLDocument& doc){
     }
 
     // Get ScannerInfo Attributes
-    const XMLAttribute *mode = scannerInfo->FindAttribute("Mode");
-    if(mode != nullptr) cs->Mode = mode->Value();
-    const XMLAttribute *vscreen = scannerInfo->FindAttribute("V_Screen");
-    if(vscreen != nullptr) cs->VScreen = vscreen->Value();
+    cs->Mode = getAttribute(scannerInfo, "Mode");
+    cs->V_Screen = getAttribute(scannerInfo, "V_Screen");
+
 
     // get View Description
     spdlog::debug("Getting ViewDescription");
@@ -114,77 +129,145 @@ shared_ptr<SC_STATUS> ScannerStatus::produceStatus(XMLDocument& doc){
         cs->OverWriteText = overWriteText;
     }
 
-    // Get Monitor List Name
-    spdlog::debug("Getting MonitorList");
-    XMLElement* listElement = scannerInfo->FirstChildElement("MonitorList");
-    if(listElement != nullptr){
-        const XMLAttribute *listname =  listElement->FindAttribute("Name");
-        if(listname != nullptr)  cs->MonitorListName = listname->Value();
+    // Mode = *_scan (includes conventional, trunk, custom_with, and cchits_with)
+    if(cs->V_Screen.find("_scan")){
+
+        // Get System
+        spdlog::debug("Getting System");
+        XMLElement* systemElement = scannerInfo->FirstChildElement("System");
+        if(systemElement != nullptr){
+
+            cs->System_Name        = getAttribute(systemElement, "Name");
+            cs->System_Index       = getAttribute(systemElement, "Index");
+            cs->System_Avoid       = getAttribute(systemElement, "Avoid");
+            cs->System_SystemType  = getAttribute(systemElement, "SystemType");
+            cs->System_Q_Key       = getAttribute(systemElement, "Q_Key");
+            cs->System_N_Tag       = getAttribute(systemElement, "N_Tag");
+            cs->System_Hold        = getAttribute(systemElement, "Hold");
+
+
+        }
+
+        // Get Department
+        spdlog::debug("Getting Department");
+        XMLElement* deptElement = scannerInfo->FirstChildElement("Department");
+        if(deptElement != nullptr){
+            cs->Dept_Name        = getAttribute(deptElement, "Name");
+            cs->Dept_Index       = getAttribute(deptElement, "Index");
+            cs->Dept_Avoid       = getAttribute(deptElement, "Avoid");
+            cs->Dept_Q_Key       = getAttribute(deptElement, "Q_Key");
+            cs->Dept_Hold        = getAttribute(deptElement, "Hold");
+        }
+
+        // Get Monitor List
+        spdlog::debug("Getting MonitorList");
+        XMLElement* listElement = scannerInfo->FirstChildElement("MonitorList");
+        if(listElement != nullptr){
+            cs->MonitorList_Name        = getAttribute(listElement, "Name");
+            cs->MonitorList_Index       = getAttribute(listElement, "Index");
+            cs->MonitorList_ListType    = getAttribute(listElement, "ListType");
+            cs->MonitorList_Q_Key       = getAttribute(listElement, "Q_Key");
+            cs->MonitorList_N_Tag       = getAttribute(listElement, "N_Tag");
+            cs->MonitorList_DB_Counter  = getAttribute(listElement, "DB_Counter");
+        }
+
     }
 
-    // Get System Name
-    spdlog::debug("Getting System");
-    XMLElement* systemElement = scannerInfo->FirstChildElement("System");
-    if(systemElement != nullptr){
-        const XMLAttribute *systemName = systemElement->FindAttribute("Name");
-        if(systemName != nullptr) cs->SystemName = systemName->Value();
+    if(cs->V_Screen == "conventional_scan"){
+        // Get Conventional Channel Name, Frequency, Service Type, Modulation
+        spdlog::debug("Getting ConvFrequency");
+        XMLElement* convElement = scannerInfo->FirstChildElement("ConvFrequency");
+        if(convElement != nullptr){
+            cs->ConvFreq_Name     = getAttribute(convElement, "Name");
+            cs->ConvFreq_Index    = getAttribute(convElement, "Index");
+            cs->ConvFreq_Avoid    = getAttribute(convElement, "Avoid");
+            cs->ConvFreq_Freq     = getAttribute(convElement, "Freq");
+            cs->ConvFreq_Mod      = getAttribute(convElement, "Mod");
+            cs->ConvFreq_N_Tag    = getAttribute(convElement, "N_Tag");
+            cs->ConvFreq_Hold     = getAttribute(convElement, "Hold");
+            cs->ConvFreq_SvcType  = getAttribute(convElement, "SvcType");
+            cs->ConvFreq_P_Ch     = getAttribute(convElement, "P_Ch");
+            cs->ConvFreq_SAS      = getAttribute(convElement, "SAS");
+            cs->ConvFreq_SAD      = getAttribute(convElement, "SAD");
+            cs->ConvFreq_LVL      = getAttribute(convElement, "LVL");
+            cs->ConvFreq_IFX      = getAttribute(convElement, "IFX");
+        }
     }
 
-    // Get Department Name
-    spdlog::debug("Getting Department");
-    XMLElement* deptElement = scannerInfo->FirstChildElement("Department");
-    if(deptElement != nullptr){
-        const XMLAttribute *deptName = deptElement->FindAttribute("Name");
-        if(deptName != nullptr) cs->DepartmentName = deptName->Value();
+    if(cs->V_Screen == "trunk_scan"){
+        spdlog::debug("Getting Trunk Scan Attributes");
+        XMLElement *siteElement = scannerInfo->FirstChildElement("Site");
+        if(siteElement != nullptr){
+            cs->Site_Name    = getAttribute(siteElement, "Name");
+            cs->Site_Index   = getAttribute(siteElement, "Index");
+            cs->Site_Avoid   = getAttribute(siteElement, "Avoid");
+            cs->Site_Q_Key   = getAttribute(siteElement, "Q_Key");
+            cs->Site_Hold    = getAttribute(siteElement, "Hold");
+            cs->Site_Mod     = getAttribute(siteElement, "Mod");
+
+
+        }
+        XMLElement *siteFrequency = scannerInfo->FirstChildElement("SiteFrequency");
+        if(siteFrequency != nullptr){
+            cs->SiteFreq_Freq = getAttribute(siteFrequency, "Freq");
+            cs->SiteFreq_IFX = getAttribute(siteFrequency, "IFX");
+            cs->SiteFreq_SAS = getAttribute(siteFrequency, "SAS");
+        }
+        XMLElement *tgidElement = scannerInfo->FirstChildElement("TGID");
+        if(tgidElement != nullptr){
+            cs->TGID_Name      = getAttribute(tgidElement, "Name");
+            cs->TGID_Index     = getAttribute(tgidElement, "Index");
+            cs->TGID_Avoid     = getAttribute(tgidElement, "Avoid");
+            cs->TGID_TGID      = getAttribute(tgidElement, "TGID");
+            cs->TGID_N_Tag     = getAttribute(tgidElement, "N_Tag");
+            cs->TGID_Hold      = getAttribute(tgidElement, "Hold");
+            cs->TGID_SvcType   = getAttribute(tgidElement, "SvcType");
+            cs->TGID_P_Ch      = getAttribute(tgidElement, "P_Ch");
+            cs->TGID_LVL       = getAttribute(tgidElement, "LVL");
+
+        }
+        XMLElement *unitIDElement = scannerInfo->FirstChildElement("UnitID");
+        if(unitIDElement != nullptr){
+            cs->UnitID_Name    = getAttribute(unitIDElement, "Name" );
+        }
+
+    }
+    // Get Weather items
+    if(cs->V_Screen == "wx_alert"){
+        spdlog::debug("Getting Weather Attributes");
+        XMLElement *wxModeElement = scannerInfo->FirstChildElement("WxMode");
+        if(wxModeElement != nullptr){
+            cs->wx_Mode    = getAttribute(wxModeElement, "Mode");
+        }
+        XMLElement *wxChannelElement = scannerInfo->FirstChildElement("WxChannel");
+        if(wxChannelElement != nullptr){
+            cs->wx_CH_No   = getAttribute(wxChannelElement, "CH_No");
+            cs->wx_Freq    = getAttribute(wxChannelElement, "Freq");
+            cs->wx_Mod     = getAttribute(wxChannelElement, "Mod");
+            cs->wx_Hold    = getAttribute(wxChannelElement, "Hold");
+        }
     }
 
-    // Get Conventional Channel Name, Frequency, Service Type, Modulation
-    spdlog::debug("Getting ConvFrequency Items");
-    XMLElement* convElement = scannerInfo->FirstChildElement("ConvFrequency");
-    if(convElement != nullptr){
-        const XMLAttribute *freqName = convElement->FindAttribute("Name");
-        if(freqName != nullptr) cs->ConvFrequencyName = freqName->Value();
 
-        const XMLAttribute *svcType = convElement->FindAttribute("SvcType");
-        if(svcType != nullptr) cs->ConvFrequencySvcType = svcType->Value();
-
-        const XMLAttribute *freq = convElement->FindAttribute("Freq");
-        if(freq != nullptr) cs->ConvFrequencyFreq = freq->Value();
-
-        const XMLAttribute *mod = convElement->FindAttribute("Mod");
-        if(mod != nullptr) cs->ConvFrequencyMod = mod->Value();
-
-    }
-
-    // Get Trunk Scanning
-    spdlog::debug("Getting Trunk Values");
-    XMLElement *siteElement = scannerInfo->FirstChildElement("Site");
-    if(siteElement != nullptr){
-        const XMLAttribute *siteName = siteElement->FindAttribute("Name");
-        if(siteName != nullptr) cs->TS_SiteName = siteName->Value();
-    }
-    XMLElement *siteFrequency = scannerInfo->FirstChildElement("SiteFrequency");
-    if(siteFrequency != nullptr){
-        const XMLAttribute *freq = siteFrequency->FindAttribute("Freq");
-        if(freq != nullptr) cs->TS_SiteFreq = freq->Value();
-    }
-    XMLElement *tgidElement = scannerInfo->FirstChildElement("TGID");
-    if(tgidElement != nullptr){
-        const XMLAttribute *tgid = tgidElement->FindAttribute("TGID");
-        if(tgid != nullptr) cs->TS_TGID = tgid->Value();
-        const XMLAttribute *tgidName = tgidElement->FindAttribute("Name");
-        if(tgidName != nullptr) cs->TS_TGIDNAME = tgidName->Value();
-    }
 
     // Get Properties
     spdlog::debug("Getting Property Items");
     XMLElement* propElement = scannerInfo->FirstChildElement("Property");
     if(propElement != nullptr){
-        const XMLAttribute *signal = propElement->FindAttribute("Sig");
-        if(signal != nullptr) cs->PropSig = signal->Value();
+        cs->Prop_F          = getAttribute(propElement, "F");
+        cs->Prop_VOL        = getAttribute(propElement, "VOL");
+        cs->Prop_SQL        = getAttribute(propElement, "SQL");
+        cs->Prop_Sig        = getAttribute(propElement, "Sig");
+        cs->Prop_Battery    = getAttribute(propElement, "Battery");
+        cs->Prop_Att        = getAttribute(propElement, "Att");
+        cs->Prop_Rec        = getAttribute(propElement, "Rec");
+        cs->Prop_KeyLock    = getAttribute(propElement, "KeyLock");
+        cs->Prop_P25Status  = getAttribute(propElement, "P25Status");
+        cs->Prop_Mute       = getAttribute(propElement, "Mute");
+        cs->Prop_A_Led      = getAttribute(propElement, "A_Led");
+        cs->Prop_Dir        = getAttribute(propElement, "Dir");
+        cs->Prop_Rssi       = getAttribute(propElement, "Rssi");
 
-        const XMLAttribute *p25 = propElement->FindAttribute("P25Status");
-        if(p25 != nullptr) cs->PropP25Status = p25->Value();
     }
 
     spdlog::debug("produceStatus returning");
@@ -192,10 +275,25 @@ shared_ptr<SC_STATUS> ScannerStatus::produceStatus(XMLDocument& doc){
 
 }
 
+std::string ScannerStatus::getAttribute(XMLElement *element, std::string attrName){
+    if(element == nullptr) return "";
+    const XMLAttribute *attr = element->FindAttribute(attrName.c_str());
+    return (attr != nullptr) ? attr->Value() : "";
+}
+
+bool ScannerStatus::isStarted() const{
+    return m_started;
+}
+
+
 void ScannerStatus::stop(){
     spdlog::debug("ScannerStatus stopping");
+    m_started = false;
     m_running = false;
-    m_status_thread->join();
+    if(m_status_thread != nullptr && m_status_thread->joinable()){
+        m_status_thread->join();
+    }
+    spdlog::debug("Exiting ScannerStatus::stop");
 }
 
 } // namespace
