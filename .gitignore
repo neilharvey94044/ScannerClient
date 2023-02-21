@@ -1,0 +1,6 @@
+#ignore intermediate and build files
+.vs
+.vscode
+build
+
+
