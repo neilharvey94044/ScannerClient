@@ -52,7 +52,7 @@ License is GPL2.0+.
 
 # Build Steps For Windows
 
-#### Prequisites
+#### Prerequisites
 1. Install Visual Studio 2022 Community Edition. During installation with the 'Visual Studio Installer' make sure you select at least the C++ Desktop development category or you'll be unable to compile the project due to the missing C++ tools.
 2. Install cmake.
 3. Install and build wxWidgets for static release (without DLL).  Download https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.1/wxWidgets-3.2.1.zip and unzip it to somewhere such as C:\MSVCDev\wxWidgets.  
@@ -69,6 +69,16 @@ cmake --build ./build --config Release
 ```
 Note: do the above from the top level ScannerClient directory.
 
+# Build for Linux
+#### Prerequisites
+1. ...
+### To generate:
+```bash
+cmake -S . -B ./build -DCMAKE_BUILD_TYPE=Release -DwxWidgets_CONFIG_EXECUTABLE=~/repos/wxWidgetsBuild/wx-config
+```
+### To build:
+```bash
+cmake -S . -B ./build
 
 
 ## RFCs and References Used In Development
