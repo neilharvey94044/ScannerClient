@@ -42,7 +42,11 @@ int TCPSocket::connect() {
     m_server_addr.sin_port = htons(m_scanner_port);
     inet_pton(AF_INET, m_scanner_ip.c_str(), &(m_server_addr.sin_addr));
     iResult = ::connect(m_socket, (const struct sockaddr *) &m_server_addr, sizeof(m_server_addr));
+    #if defined(_WIN32)
         if((iResult == SOCKET_ERROR) && (GETSOCKETERRNO() != WSAEWOULDBLOCK)){
+    #else
+        if((iResult == SOCKET_ERROR) && (GETSOCKETERRNO() != EINPROGRESS)){
+    #endif
         spdlog::error("connect() failed. {}", GETSOCKETERRNO());
         return iResult;
     }
