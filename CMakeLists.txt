@@ -9,9 +9,9 @@ Project (ScannerClient VERSION 0.01)
 include("${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/macros.cmake")
 
 #default to Release build
-#if(NOT CMAKE_BUILD_TYPE)
-	#set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
-#endif()
+if(NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
 
 
 print_environment_info()

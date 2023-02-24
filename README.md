@@ -79,7 +79,7 @@ cmake -S . -B ./build -DCMAKE_BUILD_TYPE=Release -DwxWidgets_CONFIG_EXECUTABLE=~
 ### To build:
 ```bash
 cmake -S . -B ./build
-
+```
 
 ## RFCs and References Used In Development
 
