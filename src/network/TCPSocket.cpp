@@ -31,10 +31,9 @@ int TCPSocket::connect() {
     //TODO: this is Windows only code
     // make socket non-blocking
     int iResult{0};
-    unsigned long non_blocking = -1;
-    iResult = ioctlsocket(m_socket, FIONBIO, &non_blocking);
+    iResult = setBlocking(false);
     if (iResult != NO_ERROR){
-        spdlog::error("ioctlsocket change to non-blocking failed with error: {}", iResult);
+        spdlog::error("Unable to set TCP socket to non-blocking [{}]", GETSOCKETERRNO());
         return iResult;
     }
 
@@ -56,10 +55,9 @@ int TCPSocket::connect() {
     }
 
     // make socket blocking again
-    unsigned long blocking = 0;
-    iResult = ioctlsocket(m_socket, FIONBIO, &blocking);
+    iResult = setBlocking(true);
     if (iResult != NO_ERROR){
-        spdlog::error("ioctlsocket change to blocking failed with error: {}", iResult);
+        spdlog::error("Unable to reset TCP socket to blocking : [{}]", GETSOCKETERRNO());
         return iResult;
     }
     return iResult;
@@ -94,6 +92,8 @@ std::string TCPSocket::recv() {
 
         return std::string(m_msgin);
 }
+
+
 
 TCPSocket::~TCPSocket(){}
         

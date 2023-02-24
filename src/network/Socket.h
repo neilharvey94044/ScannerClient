@@ -25,7 +25,10 @@ extern "C" {
     #include <unistd.h>
     #include <errno.h>
     #include <assert.h>
+    #include <poll.h>
     #define SOCKET int
+    #define SOCKET_ERROR (-1)
+    #define NO_ERROR (0L)
     #define ISVALIDSOCKET(s) ((s) >= 0)
     #define CLOSESOCKET(s) close(s)
     #define GETSOCKETERRNO() (errno)
@@ -56,11 +59,11 @@ class Socket {
     virtual POLLRET getPollReturn();
     virtual ~Socket();
     
-    //TODO: make these member variables private
     protected:
         SOCKET m_socket;
-        Socket(int soctype, IPPROTO protocol);
+        Socket(int soctype, int protocol);
         std::unique_ptr<SC_CONFIG> m_pConfig{nullptr};
+        virtual int setBlocking(bool blocking);
         virtual int pollForRead();
         virtual int pollForWrite();
         POLLRET m_pollret{POLLRET::SREADY};
