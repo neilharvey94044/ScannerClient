@@ -20,7 +20,6 @@ print_compiler_info()
 #---------------------- rtAudio --------------------------
 
 IF (WIN32)
-    #set(wxWidgets_USE_STATIC ON)
 
 	# compile in support for both direct sound and WASAPI
     set(USE_AUDIO_DS ON CACHE BOOL "Include support for DirectSound")
@@ -48,14 +47,25 @@ ENDIF (WIN32)
 
 
  #-------------------- wxWidgets ----------------------------
-# Create environment variables or use these to help "find_package"
-#SET(wxWidgets_ROOT_DIR D:/dev/repos/wxWidgets-3.2.1)
-SET(wxWidgets_CONFIGURATION mswu)
-#SET(wxWidgets_CONFIGURATION mswud)
-
+ # Create command line variables or use these to help "find_package"
+ # Be patient, there are lots of challenges getting find_package to work.
+ IF(WIN32)
+	IF(NOT wxWidgets_ROOT_DIR)
+		SET(wxWidgets_ROOT_DIR D:/dev/repos/wxWidgets-3.2.1)
+	ENDIF(NOT wxWidgets_ROOT_DIR)
+	SET(wxWidgets_CONFIGURATION mswu)
+	#SET(wxWidgets_CONFIGURATION mswud)
+ELSE()
+	IF(NOT wxWidgets_CONFIG_EXECUTABLE)
+		SET(wxWidgets_CONFIG_EXECUTABLE ~/repos/wxWidgetsBuild/wx-config)
+	ENDIF(NOT wxWidgets_CONFIG_EXECUTABLE)
+	IF(NOT wxWidgets_DIR)
+		SET(wxWidgets_DIR ~/wx_install/lib/cmake/wxWidgets)
+	ENDIF(NOT wxWidgets_DIR)
+ENDIF (WIN32)
 # Request the required wxWidgets libs
-#find_package(wxWidgets 3.2.1 REQUIRED COMPONENTS core base )
-find_package(wxWidgets REQUIRED base core propgrid )
+SET(wxWidgets_DIR ~/wx_install/lib/cmake/wxWidgets)
+find_package(wxWidgets REQUIRED base core propgrid)
 
 # Include the wxWidgets use file to initialize various settings
 if(wxWidgets_USE_FILE)

@@ -34,7 +34,7 @@ void stripctrlchars(span<char>& msg) {
     }
 }
 
-Socket::Socket(int soctype, IPPROTO protocol ) :
+Socket::Socket(int soctype, int protocol ) :
                 m_pConfig{SC_CONFIG::get()}
 {
                     
@@ -76,7 +76,7 @@ int Socket::pollForWrite() {
     WSAPOLLFD fdarray;
     fdarray.fd = m_socket;
     fdarray.events = POLLWRNORM;
-    iReturn = WSAPoll(&fdarray, 1, 1000);
+    iReturn = WSAPoll(&fdarray, 1, m_pConfig->socket_write_wait_ms;
     if(iReturn == SOCKET_ERROR){
         spdlog::error("Socket error on WSAPoll {}", GETSOCKETERRNO());
         return (m_pollret = Socket::POLLRET::SERROR);
@@ -91,7 +91,77 @@ int Socket::pollForWrite() {
         return (m_pollret = Socket::POLLRET::STIMEOUT);
     }
 }
+#else
+
+int Socket::pollForRead(){
+    int iReturn{0};
+    struct pollfd fds[1];
+    fds[0].fd = m_socket;
+    fds[0].revents = POLLIN;
+    iReturn = poll(fds, 1, m_pConfig->socket_read_wait_ms);
+    if(iReturn == SOCKET_ERROR){
+        spdlog::error("Socket error on POLLIN {}", GETSOCKETERRNO());
+        return (m_pollret = Socket::POLLRET::SERROR);
+    }
+    if(iReturn && (fds[0].events & POLLIN)){
+        spdlog::debug("Socket is ready to read");
+        return (m_pollret = Socket::POLLRET::SREADY);
+    }
+    else{
+        spdlog::error("Socket is not ready to read fds.revents:{}", fds[0].revents);
+        return (m_pollret = Socket::POLLRET::STIMEOUT);
+    }
+}
+
+int Socket::pollForWrite(){
+    int iReturn{0};
+    struct pollfd fds[1];
+    fds[0].fd = m_socket;
+    fds[0].revents = POLLOUT;
+    iReturn = poll(fds, 1, m_pConfig->socket_write_wait_ms);
+    if(iReturn == SOCKET_ERROR){
+        spdlog::error("Socket error on poll() {}", GETSOCKETERRNO());
+        return (m_pollret = Socket::POLLRET::SERROR);
+    }
+    if(iReturn && (fds[0].events & POLLOUT)) {  // read to write
+        spdlog::debug("Socket is ready to write");
+        return (m_pollret = Socket::POLLRET::SREADY);
+    }
+    else{
+        // this state is read when the scanner is off or already connected
+        spdlog::error("Socket is not ready to write fds.revents:{}", fds[0].revents);
+        return (m_pollret = Socket::POLLRET::STIMEOUT);
+    }
+
+}
 #endif
+
+
+int Socket::setBlocking(bool blocking){
+    int iResult{0};
+    #if defined(_WIN32)
+        unsigned long desired_state = blocking ? 0 : -1;
+        iResult = ioctlsocket(m_socket, FIONBIO, &desired_state);
+        if (iResult != NO_ERROR){
+        spdlog::error("ioctlsocket change to non-blocking failed with error [{}]", GETSOCKETERRNO());
+        return iResult;
+    }
+    #else
+        int flags = fcntl(m_socket, F_GETFL, 0);  // get existing flags
+        if (flags == SOCKET_ERROR){
+            spdlog::error("Error obtaining socket flags");
+            return SOCKET_ERROR;
+        }
+        flags = (blocking) ?  (flags & O_NONBLOCK) : (flags & ~O_NONBLOCK);
+        iResult = fcntl(m_socket, F_SETFL, flags);
+        if(iResult != NO_ERROR){
+            spdlog::error("Error changing socket to non-blocking [{}]", GETSOCKETERRNO());
+            return iResult;
+        }
+    #endif
+
+}
+
 
 Socket::POLLRET Socket::getPollReturn(){
     return m_pollret;

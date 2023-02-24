@@ -17,7 +17,6 @@ class TCPSocket : public sc::Socket{
         TCPSocket(std::string scanner_ip, int scanner_port);
         virtual int connect();
         virtual int send(std::string);
-        //TODO: give this a graceful timeout - "select()?"
         virtual std::string recv();
         virtual ~TCPSocket();
     
