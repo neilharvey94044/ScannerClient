@@ -44,8 +44,6 @@ extern "C" {
 
 namespace sc {
 
-void dump(const std::string fname, const std::string outbuf);
-void stripctrlchars(std::span<char>& msg);
 
 class Socket {
     public:

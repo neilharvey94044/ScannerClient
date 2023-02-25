@@ -1,6 +1,7 @@
 // Copyright (c) Neil D. Harvey
 // SPDX-License-Identifier: GPL-2.0+
 
+#include <wx/wx.h>
 #include <wx/confbase.h>
 #include <wx/fileconf.h>
 #include "config/WX_ConfigImpl.h"

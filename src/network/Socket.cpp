@@ -5,34 +5,13 @@
 #include <fstream>
 #include <span>
 #include <spdlog/spdlog.h>
-#include <network/Socket.h>
+#include "utils/utils.h"
+#include "network/Socket.h"
+
 
 using namespace std;
 
 namespace sc {
-
-// Utility function to dump data received to a file
-void dump(const string fname, const string outbuf) {
-    spdlog::debug("dump() dumping message to file {}", fname);
-    std::fstream fs;
-    fs.open(fname, std::ios::binary | std::ios::out);
-    if(!fs.is_open()){
-        spdlog::error("Unable to open file: {}", fname);
-        return;
-    }
-    fs << outbuf;
-    fs.close();
-    
-}
-
-// Utility function to replace control characters with spaces
-void stripctrlchars(span<char>& msg) {
-    spdlog::debug("Stripping control characters.");
-    for(char& c: msg){
-        if (iscntrl(c) != 0) {c = 0x20;}
-
-    }
-}
 
 Socket::Socket(int soctype, int protocol ) :
                 m_pConfig{SC_CONFIG::get()}
@@ -159,7 +138,7 @@ int Socket::setBlocking(bool blocking){
             return iResult;
         }
     #endif
-
+    return iResult;
 }
 
 

@@ -4,12 +4,12 @@
 #include <future>
 #include <iostream>
 #include <string>
-#include <fmt/format.h>
+//#include <fmt/format.h>  //conflicts with spdlog...TODO: find out why.
 #include <spdlog/spdlog.h>
 #include <tinyxml2/tinyxml2.h>
 #include <rtaudio/RtAudio.h>
 
-
+#include "utils/utils.h"
 #include "network/TCPSocket.h"
 #include "network/UDPSocket.h"
 #include "network/RTSPRequest.h"
@@ -38,7 +38,9 @@ void Test10_UDP_Non_Blocking();  // Test non-blocking UDP
 void Test11_Sound_And_Status(); // combine sound and status
 void Test12_MSM_Reset(string scanner_ip, int scanner_udp_port); // send MSM command to reset scanner
 void Test13_MDL_Get_Model(string scanner_ip, int scanner_udp_port); // send MDL command to get model
+#if defined(_WIN32)
 void Test14_Socket_Connect_Timeout_WIN_Specific(string scanner_ip, int scanner_rtsp_port);  //reduce connect time when scanner is offline
+#endif
 void Test15_Simulate_Keys(string scanner_ip, int scanner_udp_port);  //send various commands to the scanner
 void Test16_Update_Date_Time(string scanner_ip, int scanner_udp_port); 
 
@@ -77,7 +79,9 @@ int main(int argc, char* argv[])
     // Test11_Sound_And_Status();
     // Test12_MSM_Reset(scanner_ip, scanner_udp_port);
     // Test13_MDL_Get_Model(scanner_ip, scanner_udp_port); // send MDL command to get model
+    #if defined(_WIN32)
     // Test14_Socket_Connect_Timeout_WIN_Specific(scanner_ip, scanner_rtsp_port);
+    #endif
     // Test15_Simulate_Keys(scanner_ip, scanner_udp_port);  //send various commands to the scanner
     Test16_Update_Date_Time(scanner_ip, scanner_udp_port);  //update scanners clock
 
@@ -99,8 +103,7 @@ void Test1_UDP_XML( string scanner_ip, int scanner_udp_port){
 
     // remove extraneous control characters
     // TODO: use an algorithm and get rid of stripctrlchars()
-    span buf(udpResponse);
-    stripctrlchars(buf);
+    stripctrlchars(udpResponse);
 
     udpResponse.erase(0, 11);  //remove beginning of response that is not XML  TODO: make more generalized
 
@@ -109,7 +112,7 @@ void Test1_UDP_XML( string scanner_ip, int scanner_udp_port){
     doc.Parse(udpResponse.c_str(), udpResponse.size());
 
     if(doc.ErrorID()){
-        spdlog::error("Tinyxml2 parse error:{} ({})", doc.ErrorName(), doc.ErrorID());
+        spdlog::error("Tinyxml2 parse error:{} {}", doc.ErrorName(), (int) doc.ErrorID());
         return;
     }
 
@@ -484,8 +487,7 @@ void Test8_UDP_Push_Scanner_Info(std::string scanner_ip, int scanner_udp_port){
  
          // remove extraneous control characters
         // TODO: use an algorithm and get rid of stripctrlchars()
-        span buf(udpResponse);
-        stripctrlchars(buf);
+        stripctrlchars(udpResponse);
 
         //spdlog::info("PSI Response:\n{}", udpResponse);
 
@@ -496,7 +498,7 @@ void Test8_UDP_Push_Scanner_Info(std::string scanner_ip, int scanner_udp_port){
         doc.Parse(udpResponse.c_str(), udpResponse.size());
 
         if(doc.ErrorID()){
-            spdlog::error("Tinyxml2 parse error:{} ({})", doc.ErrorName(), doc.ErrorID());
+            spdlog::error("Tinyxml2 parse error:{} ({})", doc.ErrorName(), (int) doc.ErrorID());
             //return;
         }
         // get top level element
@@ -657,6 +659,7 @@ void Test13_MDL_Get_Model(string scanner_ip, int scanner_udp_port){
 
 }
 
+#if defined(_WIN32)
 // Attempt to connect to IP address without blocking
 void Test14_Socket_Connect_Timeout_WIN_Specific(string scanner_ip, int scanner_rtsp_port){
     spdlog::info("Entering Test14_Socket_Connect_Timeout_WIN_Specific");
@@ -735,7 +738,7 @@ void Test14_Socket_Connect_Timeout_WIN_Specific(string scanner_ip, int scanner_r
     spdlog::info("Exiting Test14_Socket_Connect_Timeout_WIN_Specific");
 
 }
-
+#endif
 
 void Test15_Simulate_Keys(string scanner_ip, int scanner_udp_port){
   spdlog::info("Entering Test15_Simulate_Keys()");

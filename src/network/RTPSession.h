@@ -37,7 +37,7 @@ class RTPSession {
     private:
         void execute(std::promise<bool> rtp_success_promise);
         void writeraw(std::string dgram);
-        RTPHDRexpanded formatHeader(std::span<char> dgram);
+        RTPHDRexpanded formatHeader(std::span<const char> dgram);
         UDPSocket m_rtp_sock;
         std::shared_ptr<AudioBuffer> m_audio_buf_ptr;
         std::unique_ptr<std::thread> m_rtp_thread{nullptr};

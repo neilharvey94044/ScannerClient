@@ -12,9 +12,9 @@
 
 // the application icon (under Windows it is in resources and even
 // though we could still include the XPM here it would be unused)
-#ifndef wxHAS_IMAGES_IN_RESOURCES
-    #include "../sample.xpm"
-#endif
+//    #ifndef wxHAS_IMAGES_IN_RESOURCES
+//        #include "../sample.xpm"
+//    #endif
 
 #include "gui/scApp.h"
 

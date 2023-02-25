@@ -1,7 +1,9 @@
 // Copyright (c) Neil D. Harvey
 // SPDX-License-Identifier: GPL-2.0+
 
+#include <fstream>
 #include <string>
+#include "spdlog/spdlog.h"
 #include "utils.h"
 
 using namespace std;
@@ -16,7 +18,28 @@ void trim (string& field){
 
 }
 
+// Utility function to dump data received to a file
+void dump(const string fname, const string outbuf) {
+    spdlog::debug("dump() dumping message to file {}", fname);
+    std::fstream fs;
+    fs.open(fname, std::ios::binary | std::ios::out);
+    if(!fs.is_open()){
+        spdlog::error("Unable to open file: {}", fname);
+        return;
+    }
+    fs << outbuf;
+    fs.close();
+    
+}
 
+// Utility function to replace control characters with spaces
+void stripctrlchars(std::string& msg) {
+    spdlog::debug("Stripping control characters.");
+    for(char& c: msg){
+        if (iscntrl(c) != 0) {c = 0x20;}
+
+    }
+}
 
 
 } //namespace

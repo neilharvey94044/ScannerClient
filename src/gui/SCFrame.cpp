@@ -62,7 +62,9 @@ SCFrame::SCFrame(const wxString& title)
 
 {
     // set the frame icon
-    SetIcon(wxICON(sample));
+    #if defined(_WIN32)
+        SetIcon(wxICON(sample));
+    #endif
  
     // create a menu bar
     wxMenu *fileMenu = new wxMenu;

@@ -6,6 +6,7 @@
 #include <spdlog/spdlog.h>
 #include <fmt/format.h>
 #include <tinyxml2/tinyxml2.h>
+#include "utils/utils.h"
 #include "status/ScannerStatus.h"
 
 using namespace std;
@@ -65,8 +66,7 @@ void ScannerStatus::execute( std::function<void(std::shared_ptr<SC_STATUS> cs)> 
          // remove extraneous control characters
         // TODO: use an algorithm and get rid of stripctrlchars()
         spdlog::debug("Stripping control characters");
-        span buf(udpResponse);
-        stripctrlchars(buf);
+        stripctrlchars(udpResponse);
 
         spdlog::debug("PSI Response:{}", udpResponse);
 
@@ -77,7 +77,7 @@ void ScannerStatus::execute( std::function<void(std::shared_ptr<SC_STATUS> cs)> 
         doc.Parse(udpResponse.c_str(), udpResponse.size());
 
         if(doc.Error()){
-            spdlog::error("Tinyxml2 parse error:{} ({})", doc.ErrorName(), doc.ErrorID());
+            spdlog::error("Tinyxml2 parse error:{} ({})", doc.ErrorName(), (int) doc.ErrorID());
             continue;
         }
 

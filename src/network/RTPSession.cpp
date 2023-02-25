@@ -35,7 +35,7 @@ RTPSession::RTPSession(std::string scanner_ip, int listen_port, std::shared_ptr<
                        m_audio_buf_ptr(audio_buf_ptr)
                        {}
 
-RTPHDRexpanded RTPSession::formatHeader(std::span<char> dgram){
+RTPHDRexpanded RTPSession::formatHeader(std::span<const char> dgram){
     RTPHDRexpanded hdr{};
     if(dgram.size() > 12){
 
@@ -93,9 +93,11 @@ void RTPSession::execute(std::promise<bool> rtp_success_promise){
             break;
         }
 
-        RTPHDRexpanded hdr = formatHeader(std::span<char>(pcmu_in));
-        spdlog::debug("Version:{} Padding_bit:{} Extension_bit:{} CSRC_count:{} Marker_bit:{} Payload_type:{} Sequence#:{} Timestamp:{} SSRC:{}",
-                            hdr.version, hdr.padding, hdr.extension, hdr.CSRCcount, hdr.marker, hdr.payload_type, hdr.sequence, hdr.timestamp, hdr.SSRC );
+        //RTPHDRexpanded hdr = formatHeader(std::span<const char>(pcmu_in));
+        RTPHDRexpanded hdr = formatHeader(std::span<const char>(pcmu_in.c_str(), pcmu_in.size()));
+        //TODO: figure out why the following debug line won't compile with g++
+        //spdlog::debug("Version:{} Padding_bit:{} Extension_bit:{} CSRC_count:{} Marker_bit:{} Payload_type:{} Sequence#:{} Timestamp:{} SSRC:{}",
+        //                    hdr.version, hdr.padding, hdr.extension, hdr.CSRCcount, hdr.marker, hdr.payload_type, hdr.sequence, hdr.timestamp, hdr.SSRC );
         //TODO: optimize this code (e.g. remove erase)
         if(pcmu_in.length() > 12)
             pcmu_in.erase(0,12); // strip header

@@ -48,7 +48,7 @@ ENDIF (WIN32)
 
  #-------------------- wxWidgets ----------------------------
  # Create command line variables or use these to help "find_package"
- # Be patient, there are lots of challenges getting find_package to work.
+ # Have patience, there are lots of challenges getting find_package to work.
  IF(WIN32)
 	IF(NOT wxWidgets_ROOT_DIR)
 		SET(wxWidgets_ROOT_DIR D:/dev/repos/wxWidgets-3.2.1)
@@ -64,7 +64,7 @@ ELSE()
 	ENDIF(NOT wxWidgets_DIR)
 ENDIF (WIN32)
 # Request the required wxWidgets libs
-SET(wxWidgets_DIR ~/wx_install/lib/cmake/wxWidgets)
+#SET(wxWidgets_DIR ~/wx_install/lib/cmake/wxWidgets)
 find_package(wxWidgets REQUIRED base core propgrid)
 
 # Include the wxWidgets use file to initialize various settings
@@ -93,14 +93,10 @@ set( scl_sources
 	${PROJECT_SOURCE_DIR}/src/config/SC_CONFIG.cpp
 	${PROJECT_SOURCE_DIR}/src/config/WX_ConfigImpl.cpp
 	${PROJECT_SOURCE_DIR}/src/control/SControl.cpp
-
-
-
 )
 
 add_library(scl STATIC ${scl_sources})
 target_include_directories(scl
-							PUBLIC  ${PROJECT_SOURCE_DIR}/src/include
 							PRIVATE ${PROJECT_SOURCE_DIR}/src
 							PRIVATE ${PROJECT_SOURCE_DIR}/external
 							PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
@@ -112,14 +108,13 @@ set_target_properties(scl PROPERTIES CXX_STANDARD_REQUIRED ON)
 set_target_properties(scl PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
 #--------------- The Test Executable --------------------------
-add_executable (sc_test
+add_executable (sc_test WIN32
 				${PROJECT_SOURCE_DIR}/src/tests/sc_test.cpp
 				${PROJECT_SOURCE_DIR}/external/tinyxml2/tinyxml2.cpp
 				${PROJECT_SOURCE_DIR}/external/rtaudio/RtAudio.cpp
 				
 )
 target_include_directories(sc_test 
-						PUBLIC  ${PROJECT_SOURCE_DIR}/src/include
 						PRIVATE ${PROJECT_SOURCE_DIR}/src
 						PRIVATE ${PROJECT_SOURCE_DIR}/src/tests
 						PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
@@ -130,7 +125,7 @@ set_target_properties(sc_test PROPERTIES CXX_STANDARD 20)
 set_target_properties(sc_test PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(sc_test PROPERTIES CXX_STANDARD_REQUIRED ON)
 set_target_properties(sc_test PROPERTIES POSITION_INDEPENDENT_CODE 1)
-target_link_libraries(sc_test PRIVATE ${wxWidgets_LIBRARIES} scl ${OTHER_LIBRARIES} )
+target_link_libraries(sc_test PRIVATE scl ${wxWidgets_LIBRARIES} ${OTHER_LIBRARIES} )
 
 
 #--------------- The GUI --------------------------
@@ -162,7 +157,6 @@ add_executable(sc WIN32 ${sc_sources})
 endif()
 
 target_include_directories(sc 
-							PUBLIC ${PROJECT_SOURCE_DIR}/src/include
 							PRIVATE ${PROJECT_SOURCE_DIR}/src
 							PRIVATE ${PROJECT_SOURCE_DIR}/external
 							PRIVATE ${PROJECT_SOURCE_DIR}/external/spdlog/include
