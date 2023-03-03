@@ -7,6 +7,7 @@
 #include <spdlog/spdlog.h>
 #include <wx/fileconf.h>
 
+#include "utils/utils.h"
 #include "control/SControl.h"
 #include "config/SC_CONFIG.h"
 #include "gui/SettingsDialog.h"
@@ -93,11 +94,10 @@ SCFrame::SCFrame(const wxString& title)
     // create a status bar
     CreateStatusBar(2);
     std::string model = m_control->getModel();
-    model = (model.find("MDL") != std::string::npos) ? model.substr(model.find_first_of(",")+1) : "?";
     std::string firmware = m_control->getFirmware();
-    firmware = (firmware.find("VER") != std::string::npos) ? firmware.substr(firmware.find_first_of(",")+1) : "?";
     std::string ip = !m_pConfig->ip_address.empty() ? m_pConfig->ip_address : "?";
-    SetStatusText(fmt::format("[ {}][ {}][ {} ]", model, firmware, m_pConfig->ip_address));
+    std::string statusbarstring =  fmt::format("[ {}][ {}][ {} ]", model, firmware, m_pConfig->ip_address);
+    SetStatusText(statusbarstring);
 
  // Status Panel
     m_status_panel  = new wxPanel(this, wxID_ANY, wxDefaultPosition, wxDefaultSize); //wxSize(800, 300)

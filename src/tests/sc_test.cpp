@@ -43,6 +43,8 @@ void Test14_Socket_Connect_Timeout_WIN_Specific(string scanner_ip, int scanner_r
 #endif
 void Test15_Simulate_Keys(string scanner_ip, int scanner_udp_port);  //send various commands to the scanner
 void Test16_Update_Date_Time(string scanner_ip, int scanner_udp_port); 
+void Test17_GSI_Get_Scanner_Info(string scanner_ip, int scanner_udp_port);
+
 
 
 
@@ -78,12 +80,13 @@ int main(int argc, char* argv[])
     // Test10_UDP_Non_Blocking();  // Test non-blocking UDP
     // Test11_Sound_And_Status();
     // Test12_MSM_Reset(scanner_ip, scanner_udp_port);
-    // Test13_MDL_Get_Model(scanner_ip, scanner_udp_port); // send MDL command to get model
+     Test13_MDL_Get_Model(scanner_ip, scanner_udp_port); // send MDL command to get model
     #if defined(_WIN32)
     // Test14_Socket_Connect_Timeout_WIN_Specific(scanner_ip, scanner_rtsp_port);
     #endif
     // Test15_Simulate_Keys(scanner_ip, scanner_udp_port);  //send various commands to the scanner
-    Test16_Update_Date_Time(scanner_ip, scanner_udp_port);  //update scanners clock
+    // Test16_Update_Date_Time(scanner_ip, scanner_udp_port);  //update scanners clock
+     // Test17_GSI_Get_Scanner_Info(scanner_ip, scanner_udp_port);
 
     spdlog::info("Testing ended.");
 }
@@ -647,7 +650,9 @@ void Test12_MSM_Reset(string scanner_ip, int scanner_udp_port){
 void Test13_MDL_Get_Model(string scanner_ip, int scanner_udp_port){
    spdlog::info("Entering Test13_MDL_Get_Model()");
 
-    string msgout {"MDL\r"};
+    //string msgout {"MDL\r"};
+    string msgout {"VER\r"};
+
     auto myUDP = make_unique<sc::UDPSocket>(scanner_ip, scanner_udp_port);
 
     spdlog::info("calling sendto()");
@@ -802,4 +807,15 @@ void Test16_Update_Date_Time(string scanner_ip, int scanner_udp_port){
     cout << s << endl;
     myUDP->sendto(s);
     cout << myUDP->recvfrom() << endl;
+}
+
+
+void Test17_GSI_Get_Scanner_Info(string scanner_ip, int scanner_udp_port){
+    auto myUDP = make_unique<sc::UDPSocket>(scanner_ip, scanner_udp_port);
+    myUDP->sendto("GSI\r");
+
+    string resp = myUDP->recvfrom();
+
+    cout << resp << endl;
+
 }

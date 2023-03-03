@@ -3,6 +3,7 @@
 
 #include <thread>
 #include <chrono>
+#include "utils/utils.h"
 #include "network/UDPSocket.h"
 #include "control/SControl.h"
 
@@ -61,13 +62,19 @@ void SControl::sendToScanner(std::string msg){
 std::string SControl::getModel() {
     auto myUDP = make_unique<sc::UDPSocket>(m_pConfig->ip_address, m_pConfig->status_udp_port);
     myUDP->sendto(msg.get_model);
-    return myUDP->recvfrom();
+    string model = myUDP->recvfrom();
+    stripctrlchars(model); 
+    model = (model.find("MDL") != std::string::npos) ? model.substr(model.find_first_of(",")+1) : "?";
+    return model;
 }
 
 std::string SControl::getFirmware(){
     auto myUDP = make_unique<sc::UDPSocket>(m_pConfig->ip_address, m_pConfig->status_udp_port);
     myUDP->sendto(msg.get_firmware);
-    return myUDP->recvfrom();
+    string firmware = myUDP->recvfrom();
+    stripctrlchars(firmware);
+    firmware = (firmware.find("VER") != std::string::npos) ? firmware.substr(firmware.find_first_of(",")+1) : "?";
+    return firmware;
 }
 
 } // namespace

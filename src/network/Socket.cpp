@@ -76,13 +76,13 @@ int Socket::pollForRead(){
     int iReturn{0};
     struct pollfd fds[1];
     fds[0].fd = m_socket;
-    fds[0].revents = POLLIN;
+    fds[0].events = POLLIN;
     iReturn = poll(fds, 1, m_pConfig->socket_read_wait_ms);
     if(iReturn == SOCKET_ERROR){
         spdlog::error("Socket error on POLLIN {}", GETSOCKETERRNO());
         return (m_pollret = Socket::POLLRET::SERROR);
     }
-    if(iReturn && (fds[0].events & POLLIN)){
+    if(iReturn && (fds[0].revents & POLLIN)){
         spdlog::debug("Socket is ready to read");
         return (m_pollret = Socket::POLLRET::SREADY);
     }
@@ -96,13 +96,13 @@ int Socket::pollForWrite(){
     int iReturn{0};
     struct pollfd fds[1];
     fds[0].fd = m_socket;
-    fds[0].revents = POLLOUT;
+    fds[0].events = POLLOUT;
     iReturn = poll(fds, 1, m_pConfig->socket_write_wait_ms);
     if(iReturn == SOCKET_ERROR){
         spdlog::error("Socket error on poll() {}", GETSOCKETERRNO());
         return (m_pollret = Socket::POLLRET::SERROR);
     }
-    if(iReturn && (fds[0].events & POLLOUT)) {  // read to write
+    if(iReturn && (fds[0].revents & POLLOUT)) {  // read to write
         spdlog::debug("Socket is ready to write");
         return (m_pollret = Socket::POLLRET::SREADY);
     }

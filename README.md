@@ -74,6 +74,10 @@ Note: do the above from the top level ScannerClient directory.
 1. Build and install wxWidgets.  Follow https://docs.wxwidgets.org/3.2.0/overview_cmake.html directions.
 2. Set wxWidgets_DIR to the directory containing the wxWidgetsConfig.cmake file.  For example in CMakeLists.txt:
 SET(wxWidgets_DIR ~/wx_install/lib/cmake/wxWidgets/wxWidgetsConfig.cmake)
+3.  Install the pulse audio development library:
+```bash
+sudo apt-get install libpulse-dev
+```
 ### To generate:
 ```bash
 cmake -S . -B ./build -DCMAKE_BUILD_TYPE=Release -DwxWidgets_CONFIG_EXECUTABLE=~/repos/wxWidgetsBuild/wx-config
