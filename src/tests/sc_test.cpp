@@ -372,7 +372,7 @@ int callback( void *outputBuffer, void * /*inputBuffer*/, unsigned int nBufferFr
 {
     spdlog::debug("In callback");
     // The buffer comes in as a pointer to a shared_ptr, we want the actual shared_ptr
-    std::shared_ptr<AudioBuffer> audio_buf_ptr =  (*(std::shared_ptr<AudioBuffer>*) data);
+    std::shared_ptr<sc::AudioBuffer> audio_buf_ptr =  (*(std::shared_ptr<sc::AudioBuffer>*) data);
 
     //TODO: optimize this; inefficient because getAudio() was designed for a container
     rtpbuf buf;
@@ -409,7 +409,7 @@ void Test6_Play_Audio_From_Scanner(){
 
     try {
         shared_ptr<RTSPSession> rtsp_session = make_shared<RTSPSession>();
-        shared_ptr<AudioBuffer> audio_buffer_ptr = rtsp_session->getAudioBuffer();
+        shared_ptr<sc::AudioBuffer> audio_buffer_ptr = rtsp_session->getAudioBuffer();
         std::promise<bool> rtsp_success_promise;
         std::future<bool> rtsp_success_future = rtsp_success_promise.get_future();
         rtsp_session->start(std::move(rtsp_success_promise));

@@ -90,6 +90,22 @@ IF(UNIX AND NOT APPLE)
 ENDIF(UNIX AND NOT APPLE)
 
 
+IF (APPLE)
+    SET(CMAKE_OSX_DEPLOYMENT_TARGET, "10.15")
+  
+    link_directories(/usr/local/lib)
+    link_directories(/opt/local/lib)
+
+    ADD_DEFINITIONS(
+      -D__MACOSX_CORE__
+    )    
+
+   FIND_LIBRARY(COREAUDIO_LIBRARY CoreAudio)
+   SET (OTHER_LIBRARIES ${COREAUDIO_LIBRARY} ${OTHER_LIBRARIES})
+   set(BUNDLE_APP OFF CACHE BOOL "Bundle Application")
+
+ENDIF (APPLE)
+
  #-------------------- wxWidgets ----------------------------
  # Create command line variables or use the settings below to help "find_package".
  # The key is to both build and install wxWidgets to the same directory.
@@ -112,6 +128,12 @@ ELSE()
 		SET(ENV{WX_CONFIG} ~/wx_install/bin/wx-config)
 	ENDIF(NOT WX_CONFIG)
 ENDIF (WIN32)
+
+IF(APPLE)
+	IF(NOT WX_CONFIG)
+		SET(ENV{WX_CONFIG} ~/wx_install/wx-config)
+	ENDIF(NOT WX_CONFIG)
+ENDIF(APPLE)
 
 # Request the required wxWidgets libs
 find_package(wxWidgets REQUIRED base core propgrid)
@@ -195,7 +217,7 @@ if(WIN32)
        ${PROJECT_SOURCE_DIR}/scannerclient.rc)
 elseif(APPLE)
     # Add an icon for the apple .app file
-    list(APPEND sc_sources ../../src/osx/carbon/wxmac.icns)
+    # list(APPEND sc_sources ../../src/osx/carbon/wxmac.icns)
 endif()
 
 if(APPLE)
