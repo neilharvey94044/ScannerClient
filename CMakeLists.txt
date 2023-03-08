@@ -45,10 +45,75 @@ IF (WIN32)
   
 ENDIF (WIN32)
 
+IF(UNIX AND NOT APPLE)
+	SET(USE_AUDIO_PULSE ON CACHE BOOL "Use Pulse Audio")
+	SET(USE_AUDIO_ALSA OFF CACHE BOOL "Use Alsa Audio")
+	SET(USE_AUDIO_JACK OFF CACHE BOOL "Use Jack Audio")
+	SET(USE_AUDIO_OSS OFF CACHE BOOL "Use OSS Audio")
+
+	IF(USE_AUDIO_PULSE)
+	SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} pulse-simple pulse)
+	ADD_DEFINITIONS(
+		 -D__LINUX_PULSE__
+	)
+ 	ENDIF(USE_AUDIO_PULSE)
+
+	IF(USE_AUDIO_JACK)
+	 	find_package(Jack)
+	 	SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} ${JACK_LIBRARIES})
+	 	ADD_DEFINITIONS(
+		  -D__UNIX_JACK__
+	 	)
+	 	include_directories(${JACK_INCLUDE_DIRS})
+  	ENDIF(USE_AUDIO_JACK)
+
+	IF(USE_AUDIO_ALSA)
+	  	SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} asound)
+	  	set(ALSA_INCLUDE_DIR "/usr/include" CACHE FILEPATH "ALSA include path")
+	  	include_directories(${ALSA_INCLUDE_DIR})
+	  	set(ALSA_LIB_DIR "/usr/lib" CACHE FILEPATH "ALSA lib path")
+	  	link_directories(${ALSA_LIB_DIR})
+	  	ADD_DEFINITIONS(
+		  -D__LINUX_ALSA__
+	  	)
+   ENDIF(USE_AUDIO_ALSA)
+
+   	IF(USE_AUDIO_OSS)
+   		SET (OTHER_LIBRARIES ${OTHER_LIBRARIES} oss)
+   		ADD_DEFINITIONS(
+		-D__LINUX_OSS__
+   		)	
+	ENDIF(USE_AUDIO_OSS)
+
+
+
+ENDIF(UNIX AND NOT APPLE)
+
+
+IF (APPLE)
+    SET(CMAKE_OSX_DEPLOYMENT_TARGET, "10.15")
+  
+    link_directories(/usr/local/lib)
+    link_directories(/opt/local/lib)
+
+    ADD_DEFINITIONS(
+      -D__MACOSX_CORE__
+    )    
+
+   FIND_LIBRARY(COREAUDIO_LIBRARY CoreAudio)
+   SET (OTHER_LIBRARIES ${COREAUDIO_LIBRARY} ${OTHER_LIBRARIES})
+   set(BUNDLE_APP OFF CACHE BOOL "Bundle Application")
+
+ENDIF (APPLE)
 
  #-------------------- wxWidgets ----------------------------
- # Create command line variables or use these to help "find_package"
- # Have patience, there are lots of challenges getting find_package to work.
+ # Create command line variables or use the settings below to help "find_package".
+ # The key is to both build and install wxWidgets to the same directory.
+ # For Linux there is also a bug in the FindwxWidgets.cmake script provided by
+ # cmake.  To overcome this bug we set a WX_CONFIG environment variable to
+ # point to the wx-config executable in our wxWidgets install directory. WX_CONFIG
+ # is not a cmake variable, it's an environment variable.  See the defaults below.
+ # For Windows make sure the wxWidgets_ROOT_DIR points to the build/install directory.
  IF(WIN32)
 	IF(NOT wxWidgets_ROOT_DIR)
 		SET(wxWidgets_ROOT_DIR D:/dev/repos/wxWidgets-3.2.1)
@@ -56,15 +121,21 @@ ENDIF (WIN32)
 	SET(wxWidgets_CONFIGURATION mswu)
 	#SET(wxWidgets_CONFIGURATION mswud)
 ELSE()
-	IF(NOT wxWidgets_CONFIG_EXECUTABLE)
-		SET(wxWidgets_CONFIG_EXECUTABLE ~/repos/wxWidgetsBuild/wx-config)
-	ENDIF(NOT wxWidgets_CONFIG_EXECUTABLE)
-	IF(NOT wxWidgets_DIR)
-		SET(wxWidgets_DIR ~/wx_install/lib/cmake/wxWidgets)
-	ENDIF(NOT wxWidgets_DIR)
+	IF(NOT wxWidgets_ROOT_DIR)
+		SET(wxWidgets_ROOT_DIR ~/wx_install)
+	ENDIF(NOT wxWidgets_ROOT_DIR)
+	IF(NOT WX_CONFIG)
+		SET(ENV{WX_CONFIG} ~/wx_install/bin/wx-config)
+	ENDIF(NOT WX_CONFIG)
 ENDIF (WIN32)
+
+IF(APPLE)
+	IF(NOT WX_CONFIG)
+		SET(ENV{WX_CONFIG} ~/wx_install/wx-config)
+	ENDIF(NOT WX_CONFIG)
+ENDIF(APPLE)
+
 # Request the required wxWidgets libs
-#SET(wxWidgets_DIR ~/wx_install/lib/cmake/wxWidgets)
 find_package(wxWidgets REQUIRED base core propgrid)
 
 # Include the wxWidgets use file to initialize various settings
@@ -146,7 +217,7 @@ if(WIN32)
        ${PROJECT_SOURCE_DIR}/scannerclient.rc)
 elseif(APPLE)
     # Add an icon for the apple .app file
-    list(APPEND sc_sources ../../src/osx/carbon/wxmac.icns)
+    # list(APPEND sc_sources ../../src/osx/carbon/wxmac.icns)
 endif()
 
 if(APPLE)
