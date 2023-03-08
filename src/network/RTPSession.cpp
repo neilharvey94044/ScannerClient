@@ -62,6 +62,12 @@ void RTPSession::writeraw(std::string dgram){
     }
 }
 
+void RTPSession::writeraw(rtpbuf& dgram){
+    if(std::fstream fraw("decompanded.bin", std::ios::binary | std::ios::app); fraw){
+        fraw.write((const char *) &dgram, sizeof(dgram));
+    }
+}
+
 void RTPSession::start(std::promise<bool> rtp_success_promise){
     m_rtp_thread = std::make_unique<std::thread>(&RTPSession::execute, this, std::move(rtp_success_promise));
 }
@@ -103,6 +109,9 @@ void RTPSession::execute(std::promise<bool> rtp_success_promise){
             pcmu_in.erase(0,12); // strip header
         long nsamples = ulaw_expand(pcmu_in, (*pcm_out_ptr));  // decompand
         m_audio_buf_ptr->pushAudio(pcm_out_ptr);               // put in pipeline for playing
+
+        //writeraw(*pcm_out_ptr);
+
     }
 
     m_audio_buf_ptr->setStopped(true);

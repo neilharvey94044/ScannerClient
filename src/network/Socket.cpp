@@ -55,7 +55,7 @@ int Socket::pollForWrite() {
     WSAPOLLFD fdarray;
     fdarray.fd = m_socket;
     fdarray.events = POLLWRNORM;
-    iReturn = WSAPoll(&fdarray, 1, m_pConfig->socket_write_wait_ms;
+    iReturn = WSAPoll(&fdarray, 1, m_pConfig->socket_write_wait_ms);
     if(iReturn == SOCKET_ERROR){
         spdlog::error("Socket error on WSAPoll {}", GETSOCKETERRNO());
         return (m_pollret = Socket::POLLRET::SERROR);

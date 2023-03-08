@@ -1,7 +1,7 @@
 # Copyright (c) Neil D. Harvey
 # SPDX-License-Identifier: GPL-2.0+
 
-cmake_minimum_required (VERSION 3.22)
+cmake_minimum_required (VERSION 3.25)
 SET(CMAKE_CONFIGURATION_TYPES ${CMAKE_BUILD_TYPE} CACHE STRING "" FORCE)
 
 Project (ScannerClient VERSION 0.01)

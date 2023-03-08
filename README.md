@@ -71,16 +71,21 @@ Note: do the above from the top level ScannerClient directory.
 
 # Build for Linux
 #### Prerequisites
-1. Build and install wxWidgets.  Follow https://docs.wxwidgets.org/3.2.0/overview_cmake.html directions.
-2. Set wxWidgets_DIR to the directory containing the wxWidgetsConfig.cmake file.  For example in CMakeLists.txt:
-SET(wxWidgets_DIR ~/wx_install/lib/cmake/wxWidgets/wxWidgetsConfig.cmake)
-### To generate:
+1. Install gtk3:
 ```bash
-cmake -S . -B ./build -DCMAKE_BUILD_TYPE=Release -DwxWidgets_CONFIG_EXECUTABLE=~/repos/wxWidgetsBuild/wx-config
+sudo apt-get install libgtk-3-dev
 ```
-### To build:
+2.  Install cmake version 3.25 minimum.  You may need to build from source.  Earlier versions have bugs that fail to build wxWidgets with the required options.
+3. Build and install wxWidgets.  Follow https://docs.wxwidgets.org/3.2.0/overview_cmake.html directions.  Build into a separate directory, e.g. ~/repos/wxWidgetsBuild.  Set wxBUILD_SHARED=OFF, wxBUILD_MONOLITHIC=ON, and CMAKE_BUILD_TYPE=Release.  For example the follow assumes you have put the wxWidgets source into ~/repos/wxWidgets-3.2.2.1 and are building into ~/repos/wxWidgetsBuild and installing into ~/wx_install.
 ```bash
-cmake -S . -B ./build
+cd ~/repos/wxWidgetsBuild
+cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DwxBUILD_SHARED=OFF -DwxBUILD_MONOLITHIC=ON -DCMAKE_INSTALL_PREFIX=~/wx_install ~/repos/wxWidgets-3.2.2.1
+cmake --build .
+cmake --build --target install
+```
+4. Set wxWidgets_DIR to the directory containing the wxWidgetsConfig.cmake file.  For example in CMakeLists.txt:
+```bash
+SET(wxWidgets_DIR ~/wx_install/lib/cmake/wxWidgets/wxWidgetsConfig.cmake)
 ```
 
 ## RFCs and References Used In Development
