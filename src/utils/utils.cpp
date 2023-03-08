@@ -6,9 +6,8 @@
 #include "spdlog/spdlog.h"
 #include "utils.h"
 
-using namespace std;
 namespace sc {
-void trim (string& field){
+void trim (std::string& field){
     field.erase(field.begin(), std::find_if(field.begin(), field.end(), [](int ch) {
       return !std::isspace(ch);
     }));
@@ -19,7 +18,7 @@ void trim (string& field){
 }
 
 // Utility function to dump data received to a file
-void dump(const string fname, const string outbuf) {
+void dump(const std::string fname, const std::string outbuf) {
     spdlog::debug("dump() dumping message to file {}", fname);
     std::fstream fs;
     fs.open(fname, std::ios::binary | std::ios::out);

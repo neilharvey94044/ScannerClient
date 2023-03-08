@@ -106,6 +106,10 @@ IF (APPLE)
 
 ENDIF (APPLE)
 
+#--------------------- libsamplerate -----------------------
+add_subdirectory(external/libsamplerate)
+
+
  #-------------------- wxWidgets ----------------------------
  # Create command line variables or use the settings below to help "find_package".
  # The key is to both build and install wxWidgets to the same directory.
@@ -114,6 +118,7 @@ ENDIF (APPLE)
  # point to the wx-config executable in our wxWidgets install directory. WX_CONFIG
  # is not a cmake variable, it's an environment variable.  See the defaults below.
  # For Windows make sure the wxWidgets_ROOT_DIR points to the build/install directory.
+ # Note that the Windows drive specified is "D:", yours might be "C:".
  IF(WIN32)
 	IF(NOT wxWidgets_ROOT_DIR)
 		SET(wxWidgets_ROOT_DIR D:/dev/repos/wxWidgets-3.2.1)
@@ -172,6 +177,7 @@ target_include_directories(scl
 							PRIVATE ${PROJECT_SOURCE_DIR}/external
 							PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
 							PRIVATE ${PROJECT_SOURCE_DIR}/external/spdlog/include
+							PRIVATE ${PROJECT_SOURCE_DIR}/external/libsamplerate/include
 							)
 set_target_properties(scl PROPERTIES CXX_STANDARD 20)
 set_target_properties(scl PROPERTIES CXX_EXTENSIONS OFF)
@@ -179,7 +185,7 @@ set_target_properties(scl PROPERTIES CXX_STANDARD_REQUIRED ON)
 set_target_properties(scl PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
 #--------------- The Test Executable --------------------------
-add_executable (sc_test WIN32
+add_executable (sc_test
 				${PROJECT_SOURCE_DIR}/src/tests/sc_test.cpp
 				${PROJECT_SOURCE_DIR}/external/tinyxml2/tinyxml2.cpp
 				${PROJECT_SOURCE_DIR}/external/rtaudio/RtAudio.cpp
@@ -238,4 +244,4 @@ set_target_properties(sc PROPERTIES CXX_STANDARD 20)
 set_target_properties(sc PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(sc PROPERTIES CXX_STANDARD_REQUIRED ON)
 set_target_properties(sc PROPERTIES POSITION_INDEPENDENT_CODE 1)
-target_link_libraries(sc PRIVATE ${wxWidgets_LIBRARIES} scl ${OTHER_LIBRARIES})
+target_link_libraries(sc PRIVATE ${wxWidgets_LIBRARIES} samplerate scl ${OTHER_LIBRARIES})

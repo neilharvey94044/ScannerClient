@@ -3,11 +3,10 @@
 
 #include <string>
 
-using namespace std;
 
 namespace sc {
-void trim (string& field);
-void dump(const string fname, const string outbuf);
+void trim (std::string& field);
+void dump(const std::string fname, const std::string outbuf);
 void stripctrlchars(std::string& msg);
 
 

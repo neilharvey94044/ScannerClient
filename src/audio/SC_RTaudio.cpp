@@ -65,7 +65,7 @@ void SC_RTaudio::start(){
 
     try {
         if(m_audio_buffer_ptr != nullptr){
-            m_dac.openStream( &m_oParams, NULL, RTAUDIO_SINT16, m_sample_rate, &m_buffer_frames, &rtaudio_callback, (void *)&m_audio_buffer_ptr );
+            m_dac.openStream( &m_oParams, NULL, RTAUDIO_FLOAT32, m_sample_rate, &m_buffer_frames, &rtaudio_callback, (void *)&m_audio_buffer_ptr );
             spdlog::debug("Opened Audio Stream");
             m_dac.startStream();
             spdlog::debug("Started Audio Stream");
@@ -135,13 +135,13 @@ int rtaudio_callback( void *outputBuffer, void * /*inputBuffer*/, unsigned int n
     std::shared_ptr<AudioBuffer> audio_buf_ptr =  (*(std::shared_ptr<AudioBuffer>*) data);
     int channels = audio_buf_ptr->getChannels();
 
-    rtpbuf buf;
+    float_buf buf;
     audio_buf_ptr->getAudio(buf);
-    unsigned short* outbuf_ptr = (unsigned short*) outputBuffer;
-    for(unsigned short s: buf){
-        *outbuf_ptr++ = s;
+    float* outbuf_ptr = (float*) outputBuffer;
+    for(auto f: buf){
+        *outbuf_ptr++ = f;
         if(channels == 2){ // add another sample to interleave for two channels
-            *outbuf_ptr++ = s;
+            *outbuf_ptr++ = f;
         }
     }
 

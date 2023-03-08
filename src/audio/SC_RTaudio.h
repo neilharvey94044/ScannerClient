@@ -33,9 +33,9 @@ class SC_RTaudio : ISC_Audio {
         RtAudio m_dac{};
         RtAudio::StreamParameters m_oParams;
         unsigned int m_audio_device{0};
-        unsigned int m_channels{1};
-        unsigned int m_sample_rate{8000};
-        unsigned int m_buffer_frames{320};
+        unsigned int m_channels{1};  // just for resampling; will use two channels for audio if available
+        unsigned int m_sample_rate{44100};
+        unsigned int m_buffer_frames{SC_FLOAT_BUF_SIZE};
         std::atomic_bool m_started{false};
         std::atomic_bool m_connection_fail{false};
 
