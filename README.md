@@ -47,7 +47,7 @@ License is GPL2.0+.
 4.  Testing has been limited.  I'm one person.
 5.  Many capabilities and functions of the scanner have not been implemented.
 6.  If you get the "Advanced" settings confused, delete the sc.cfg file re-enter your IP address.  The defaults will be restored.
-7.  Windows security will stop the program the first time you run it.  When prompted, authorize the program to run and Windows will not repeat.
+7.  Windows security will stop the program the first time you run it.  When prompted, authorize the program to run and Windows will not repeat.  I will likely resolve this eventually.
 8. If you've got the network and IP address correct, but ScannerClient is not connecting, try rebooting the scanner.  Often the audio service on the scanner will stop working because it didn't receive a valid termination of the RTSP session.
 
 # Build Steps For Windows
@@ -79,28 +79,33 @@ $ sudo apt-get install git build-essential automake cmake
 sudo apt-get install libgtk-3-dev libpulse-dev
 ```
 ## Build and install wxWidgets
-First download wxWidgets source to "~/repos/wxWidgets-3.2.2.1" or similar, change the following to match.
+First download wxWidgets source to `~/repos/wxWidgets-3.2.2.1` or similar, change the following to match.
 ```bash
 cd ~
 mkdir wx_install
 cd ~/repos/wxWidgets-3.2.2.1
-./autogen.sh
 ./config --prefix ~/wx_install --disable-shared --enable-monolithic --enable-propgrid
 make -j4
 make install
 ```
 ## WX_CONFIG Environment Variable
-Set an environment variable named WX_CONFIG to the directory where you built wxWidgets, in the case above that would be "~/wx_install".
-"~/wx_install" is also the default directory used by the CMakeLists.txt for ScannerClient.
+Set an environment variable named `WX_CONFIG` to the wx-config executable where you built wxWidgets, in the case above that would be  `~/wx_install/bin/wx-config`.  
+This is the default used by the CMakeLists.txt for ScannerClient.
 ```bash
-export WX_CONFIG=~/wx_install
+export WX_CONFIG=~/wx_install/bin/wx-config
 ```
-## Generate for ScannerClient
+## Generate and build ScannerClient
 ```bash
+cd ~
+mkdir repos
+cd repos
+git clone https://github.com/neilharvey94044/ScannerClient.git
+cd ScannerClient
+mkdir build
+cmake -S . -B ./build
+cmake --build ./build
 ```
-## Build for ScannerClient
-```bash
-```
+Look for the executable in ~/repos/ScannerClient/build/Release, you can run from here or move to where you like.
 
 
 # Build Steps for Apple
