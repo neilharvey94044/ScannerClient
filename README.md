@@ -70,22 +70,42 @@ cmake --build ./build --config Release
 Note: do the above from the top level ScannerClient directory.
 
 # Build Steps for Linux
-#### Prerequisites
-1. Install gtk3:
-=======
-1. Build and install wxWidgets.  Follow https://docs.wxwidgets.org/3.2.0/overview_cmake.html directions.
-2. Set wxWidgets_DIR to the directory containing the wxWidgetsConfig.cmake file.  For example in CMakeLists.txt:
-SET(wxWidgets_DIR ~/wx_install/lib/cmake/wxWidgets/wxWidgetsConfig.cmake)
-3.  Install the pulse audio development library:
+## Basic build support
 ```bash
-sudo apt-get install libpulse-dev
+$ sudo apt-get install git build-essential automake cmake
 ```
-### To generate:
+## Base dependencies
+```bash
+sudo apt-get install libgtk-3-dev libpulse-dev
+```
+## Build and install wxWidgets
+First download wxWidgets source to "~/repos/wxWidgets-3.2.2.1" or similar, change the following to match.
+```bash
+cd ~
+mkdir wx_install
+cd ~/repos/wxWidgets-3.2.2.1
+./autogen.sh
+./config --prefix ~/wx_install --disable-shared --enable-monolithic --enable-propgrid
+make -j4
+make install
+```
+## WX_CONFIG Environment Variable
+Set an environment variable named WX_CONFIG to the directory where you built wxWidgets, in the case above that would be "~/wx_install".
+"~/wx_install" is also the default directory used by the CMakeLists.txt for ScannerClient.
+```bash
+export WX_CONFIG=~/wx_install
+```
+## Generate for ScannerClient
+```bash
+```
+## Build for ScannerClient
+```bash
+```
 
-```bash
-sudo apt-get install libgtk-3-dev
-```
-2.  Install cmake version 3.25 minimum.  You may need to build from source.  Earlier versions have bugs that fail to build wxWidgets with the required options.
+
+# Build Steps for Apple
+
+2.  Install cmake version 3.25 minimum.  Earlier versions have bugs that fail to build wxWidgets with the required options.
 3. Build and install wxWidgets.  Follow https://docs.wxwidgets.org/3.2.0/overview_cmake.html directions.  Build into a separate directory, e.g. ~/repos/wxWidgetsBuild.  Set wxBUILD_SHARED=OFF, wxBUILD_MONOLITHIC=ON, and CMAKE_BUILD_TYPE=Release.  For example the follow assumes you have put the wxWidgets source into ~/repos/wxWidgets-3.2.2.1 and are building into ~/repos/wxWidgetsBuild and installing into ~/wx_install.
 ```bash
 cd ~/repos/wxWidgetsBuild
@@ -95,8 +115,9 @@ cmake --build --target install
 ```
 4. Set wxWidgets_DIR to the directory containing the wxWidgetsConfig.cmake file.  For example in CMakeLists.txt:
 ```bash
-SET(wxWidgets_DIR ~/wx_install/lib/cmake/wxWidgets/wxWidgetsConfig.cmake)
 ```
+
+
 
 ## RFCs and References Used In Development
 
