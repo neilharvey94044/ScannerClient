@@ -237,11 +237,12 @@ target_include_directories(sc
 							PRIVATE ${PROJECT_SOURCE_DIR}/src
 							PRIVATE ${PROJECT_SOURCE_DIR}/external
 							PRIVATE ${PROJECT_SOURCE_DIR}/external/spdlog/include
+							PRIVATE ${PROJECT_SOURCE_DIR}/external/libsamplerate/include
 
 )
 
 set_target_properties(sc PROPERTIES CXX_STANDARD 20)
 set_target_properties(sc PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(sc PROPERTIES CXX_STANDARD_REQUIRED ON)
-set_target_properties(sc PROPERTIES POSITION_INDEPENDENT_CODE 1)
-target_link_libraries(sc PRIVATE ${wxWidgets_LIBRARIES} samplerate scl ${OTHER_LIBRARIES})
+#set_target_properties(sc PROPERTIES POSITION_INDEPENDENT_CODE 1)
+target_link_libraries(sc PRIVATE ${wxWidgets_LIBRARIES} scl samplerate ${OTHER_LIBRARIES})
