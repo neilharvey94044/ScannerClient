@@ -373,13 +373,17 @@ int callback( void *outputBuffer, void * /*inputBuffer*/, unsigned int nBufferFr
     spdlog::debug("In callback");
     // The buffer comes in as a pointer to a shared_ptr, we want the actual shared_ptr
     std::shared_ptr<sc::AudioBuffer> audio_buf_ptr =  (*(std::shared_ptr<sc::AudioBuffer>*) data);
+    int channels = audio_buf_ptr->getChannels();
 
     //TODO: optimize this; inefficient because getAudio() was designed for a container
-    rtpbuf buf;
+    float_buf buf;
     audio_buf_ptr->getAudio(buf);
-    unsigned short* outbuf_ptr = (unsigned short*) outputBuffer;
-    for(unsigned short s: buf){
-        *outbuf_ptr++ = s;
+    float* outbuf_ptr = (float*) outputBuffer;
+    for(auto f: buf){
+        *outbuf_ptr++ = f;
+        if(channels == 2){ // add another sample to interleave for two channels
+            *outbuf_ptr++ = f;
+        }
     }
 
     if(audio_buf_ptr->getStopped()){

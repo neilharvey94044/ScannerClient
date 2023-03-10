@@ -16,17 +16,7 @@ endif()
 project(libsamplerate VERSION 0.2.2 LANGUAGES C)
 
 # Configuration
-
-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  set(IS_ROOT_PROJECT ON)
-else()
-  set(IS_ROOT_PROJECT OFF)
-endif()
-
-option(LIBSAMPLERATE_EXAMPLES "Enable to generate examples" ${IS_ROOT_PROJECT})
-option(LIBSAMPLERATE_INSTALL "Enable to add install directives" ${IS_ROOT_PROJECT})
-
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED TRUE)
@@ -37,13 +27,6 @@ include(CheckIncludeFile)
 include(CheckLibraryExists)
 include(CheckSymbolExists)
 include(GNUInstallDirs)
-
-include(CTest)
-
-if(DEFINED LIBSAMPLERATE_TESTS)
-  message(DEPRECATION "LIBSAMPLERATE_TESTS option deprecated, use BUILD_TESTING option instead.")
-  set(BUILD_TESTING ${LIBSAMPLERATE_TESTS})
-endif()
 
 add_definitions(-DHAVE_CONFIG_H)
 include_directories(${PROJECT_BINARY_DIR})
@@ -119,24 +102,8 @@ endif()
 
 add_subdirectory(src)
 
-# Tests
-
-# BUILD_TESTING is declared by CTest module and is ON by default
-if(BUILD_TESTING)
-  add_subdirectory(tests)
-endif()
-
-# Examples
-
-if(LIBSAMPLERATE_EXAMPLES)
-  add_subdirectory(examples)
-endif()
 
 configure_file(config.h.cmake config.h)
-
-if(LIBSAMPLERATE_INSTALL)
-  add_subdirectory(docs)
-endif()
 
 # Packaging support
 

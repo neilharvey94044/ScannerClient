@@ -9,13 +9,15 @@
 // for all others, include the necessary headers 
 // includes almost all "standard" wxWidgets headers
 #include "wx/wx.h"
+#include <wx/fileconf.h>
+
 
 // the application icon (under Windows it is in resources and even
 // though we could still include the XPM here it would be unused)
 //    #ifndef wxHAS_IMAGES_IN_RESOURCES
 //        #include "../sample.xpm"
 //    #endif
-
+#include "config/SC_CONFIG.h"
 #include "gui/scApp.h"
 
 wxIMPLEMENT_APP(SCApp);
@@ -24,6 +26,11 @@ bool SCApp::OnInit()
 {
     if ( !wxApp::OnInit() )
         return false;
+
+    // configuration file - created where the executable is invoked
+    wxConfigBase *pConfig = new wxFileConfig(wxEmptyString, wxEmptyString, "sc.cfg", wxEmptyString, wxCONFIG_USE_RELATIVE_PATH);
+    pConfig->SetRecordDefaults(false);
+    wxConfigBase::Set(pConfig);
 
     initializeLogger();
 
@@ -62,12 +69,19 @@ int SCApp::FilterEvent(wxEvent& event)
 
 
 void SCApp::initializeLogger(){
+     auto pConfig = sc::SC_CONFIG::get();
      auto custom_logger = spdlog::basic_logger_mt<spdlog::async_factory>("Custom", "sc.log");
     //auto custom_logger = spdlog::basic_logger_mt("Custom", "sc.log", true);
     spdlog::set_default_logger(custom_logger);
-    spdlog::set_level(spdlog::level::debug);
+    if(pConfig->debug_logging == 0){
+        spdlog::set_level(spdlog::level::info);
+        spdlog::flush_on(spdlog::level::info);
+    }
+    else{
+        spdlog::set_level(spdlog::level::debug);
+        spdlog::flush_on(spdlog::level::debug);
+    }
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] %^[%l]%$ [%t] %v");
-    spdlog::flush_on(spdlog::level::debug);
     spdlog::flush_every(std::chrono::seconds(10)); //doesn't seem to work
     spdlog::debug("Logger initialized");
 }

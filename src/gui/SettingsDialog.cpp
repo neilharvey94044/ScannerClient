@@ -110,9 +110,10 @@ wxPanel* SettingsDialog::CreateAdvancedSettingsPage(wxWindow* parent)
     m_pg = pg;
     pg->Append( new wxIntProperty("audio_rtsp_port", wxPG_LABEL, pConfig->ReadLong("/Advanced/audio_rtsp_port", 554) ) );
     pg->Append( new wxIntProperty("status_udp_port", wxPG_LABEL, pConfig->ReadLong("/Advanced/status_udp_port", 50536) ) );
-    pg->Append( new wxIntProperty("socket_read_wait", wxPG_LABEL, pConfig->ReadLong("/Advanced/socket_read_wait", 1000) ) );
-    pg->Append( new wxIntProperty("socket_write_wait", wxPG_LABEL, pConfig->ReadLong("/Advanced/socket_write_wait",  2000) ) );
+    pg->Append( new wxIntProperty("socket_read_wait", wxPG_LABEL, pConfig->ReadLong("/Advanced/socket_read_wait", 3000) ) );
+    pg->Append( new wxIntProperty("socket_write_wait", wxPG_LABEL, pConfig->ReadLong("/Advanced/socket_write_wait",  3000) ) );
     pg->Append( new wxStringProperty("hint_rtp_port", wxPG_LABEL, pConfig->Read("/Advanced/hint_rtp_port", "49990-49991") ) );
+    pg->Append( new wxIntProperty("debug_logging", wxPG_LABEL, pConfig->ReadLong("/Advanced/debug_logging", 0) ) );
 
     topSizer->Add(pg, 0, wxALIGN_LEFT);
     panel->SetSizerAndFit(topSizer);
@@ -136,6 +137,7 @@ void SettingsDialog::onOK(wxCommandEvent& e){
             pConfig->Write("/Advanced/socket_read_wait",  m_pg->GetPropertyByName("socket_read_wait")->GetValue().GetLong() );
             pConfig->Write("/Advanced/socket_write_wait", m_pg->GetPropertyByName("socket_write_wait")->GetValue().GetLong() );
             pConfig->Write("/Advanced/hint_rtp_port",     m_pg->GetPropertyByName("hint_rtp_port")->GetValue().GetString() );
+            pConfig->Write("/Advanced/debug_logging",     m_pg->GetPropertyByName("debug_logging")->GetValue().GetLong() );
         }
 
         pConfig->Flush();

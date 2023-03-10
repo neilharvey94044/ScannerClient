@@ -33,6 +33,7 @@ WX_ConfigImpl::WX_ConfigImpl()
     socket_read_wait_ms = m_pConfig->Read("/Advanced/socket_read_wait", 1000);
     socket_write_wait_ms = m_pConfig->Read("/Advanced/socket_write_wait", 2000);
     hint_rtp_port = m_pConfig->Read("/Advanced/hint_rtp_port", "49990-49991");
+    debug_logging = m_pConfig->ReadLong("/Advanced/debug_logging", 0);
 
 }
 

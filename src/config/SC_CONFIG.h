@@ -23,9 +23,10 @@ class SC_CONFIG {
         std::string user_agent{"ScannerClient 1.0"};
         int audio_rtsp_port{554};
         int status_udp_port{50536};
-        int socket_read_wait_ms{1000};
-        int socket_write_wait_ms{2000};  
+        int socket_read_wait_ms{3000};
+        int socket_write_wait_ms{3000};  
         std::string hint_rtp_port{"49990-49991"};
+        long debug_logging{0};
 
 };
 

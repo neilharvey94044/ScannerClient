@@ -5,7 +5,7 @@
 #include <vector>
 #include <array>
 #include <spdlog/spdlog.h>
-#include <wx/fileconf.h>
+//#include <wx/fileconf.h>
 
 #include "utils/utils.h"
 #include "control/SControl.h"
@@ -86,10 +86,12 @@ SCFrame::SCFrame(const wxString& title)
 
 
 
+/*
     // configuration file - created where the executable is invoked
     wxConfigBase *pConfig = new wxFileConfig(wxEmptyString, wxEmptyString, "sc.cfg", wxEmptyString, wxCONFIG_USE_RELATIVE_PATH);
     pConfig->SetRecordDefaults(false);
     wxConfigBase::Set(pConfig);
+*/
 
     // create a status bar
     CreateStatusBar(2);

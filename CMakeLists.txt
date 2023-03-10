@@ -2,11 +2,13 @@
 # SPDX-License-Identifier: GPL-2.0+
 
 cmake_minimum_required (VERSION 3.25)
-SET(CMAKE_CONFIGURATION_TYPES ${CMAKE_BUILD_TYPE} CACHE STRING "" FORCE)
+#SET(CMAKE_CONFIGURATION_TYPES ${CMAKE_BUILD_TYPE} CACHE STRING "" FORCE)
+set(CMAKE_CONFIGURATION_TYPES "Release;Debug" CACHE STRING "Configuration Types" FORCE)
 
 Project (ScannerClient VERSION 0.01)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/src/cmake/macros.cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 #default to Release build
 if(NOT CMAKE_BUILD_TYPE)
@@ -196,13 +198,14 @@ target_include_directories(sc_test
 						PRIVATE ${PROJECT_SOURCE_DIR}/src/tests
 						PRIVATE ${PROJECT_SOURCE_DIR}/external/fmt/include
 						PRIVATE ${PROJECT_SOURCE_DIR}/external/spdlog/include
+						PRIVATE ${PROJECT_SOURCE_DIR}/external/libsamplerate/include
 						PRIVATE ${PROJECT_SOURCE_DIR}/external
 						)
 set_target_properties(sc_test PROPERTIES CXX_STANDARD 20)
 set_target_properties(sc_test PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(sc_test PROPERTIES CXX_STANDARD_REQUIRED ON)
 set_target_properties(sc_test PROPERTIES POSITION_INDEPENDENT_CODE 1)
-target_link_libraries(sc_test PRIVATE scl ${wxWidgets_LIBRARIES} ${OTHER_LIBRARIES} )
+target_link_libraries(sc_test PRIVATE ${wxWidgets_LIBRARIES} scl samplerate ${OTHER_LIBRARIES} )
 
 
 #--------------- The GUI --------------------------
