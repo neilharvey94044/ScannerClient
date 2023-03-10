@@ -76,7 +76,7 @@ void RTSPResponse::parseStatus(const string statusline){
     }
     else m_status = -1;
 
-    spdlog::debug("RTSPResponse Method Type:{} version:{} status:{}",m_method_type, m_version, m_status);
+    //spdlog::debug("RTSPResponse Method Type:{} version:{} status:{}",m_method_type, m_version, m_status);
 }
 
 void RTSPResponse::parseTransport(){

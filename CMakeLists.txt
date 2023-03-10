@@ -184,7 +184,7 @@ target_include_directories(scl
 set_target_properties(scl PROPERTIES CXX_STANDARD 20)
 set_target_properties(scl PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(scl PROPERTIES CXX_STANDARD_REQUIRED ON)
-set_target_properties(scl PROPERTIES POSITION_INDEPENDENT_CODE 1)
+#set_target_properties(scl PROPERTIES POSITION_INDEPENDENT_CODE 1)
 
 #--------------- The Test Executable --------------------------
 add_executable (sc_test
@@ -204,8 +204,8 @@ target_include_directories(sc_test
 set_target_properties(sc_test PROPERTIES CXX_STANDARD 20)
 set_target_properties(sc_test PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(sc_test PROPERTIES CXX_STANDARD_REQUIRED ON)
-set_target_properties(sc_test PROPERTIES POSITION_INDEPENDENT_CODE 1)
-target_link_libraries(sc_test PRIVATE ${wxWidgets_LIBRARIES} scl samplerate ${OTHER_LIBRARIES} )
+#set_target_properties(sc_test PROPERTIES POSITION_INDEPENDENT_CODE 1)
+target_link_libraries(sc_test PRIVATE scl samplerate ${OTHER_LIBRARIES} ${wxWidgets_LIBRARIES} )
 
 
 #--------------- The GUI --------------------------

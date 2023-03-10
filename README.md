@@ -102,7 +102,7 @@ cd repos
 git clone https://github.com/neilharvey94044/ScannerClient.git
 cd ScannerClient
 mkdir build
-cmake -S . -B ./build
+cmake -S . -B ./build -DCMAKE_CONFIG_TYPE=Release
 cmake --build ./build --config Release
 ```
 Look for the executable in ~/repos/ScannerClient/build/Release, you can run from here or move to where you like.
