@@ -103,7 +103,7 @@ endif()
 add_subdirectory(src)
 
 
-#configure_file(config.h.cmake config.h)
+configure_file(config.h.cmake config.h)
 
 # Packaging support
 
