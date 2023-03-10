@@ -103,15 +103,15 @@ endif()
 add_subdirectory(src)
 
 
-configure_file(config.h.cmake config.h)
+#configure_file(config.h.cmake config.h)
 
 # Packaging support
 
 # See https://cmake.org/cmake/help/v3.12/release/3.12.html#cpack
-if(CMAKE_VERSION VERSION_LESS 3.12)
-  set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
-  set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
-  set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
-endif()
+#if(CMAKE_VERSION VERSION_LESS 3.12)
+#  set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+#  set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+#  set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+#endif()
 
-include(CPack)
+#include(CPack)
