@@ -47,24 +47,13 @@ License is GPL2.0+.
 
 # Caveats
 1. Currently built and run on Windows 10, Ubuntu 22, and OSX 10.15. All components used by ScannerClient were selected because they run on all three platforms.
-1. Currently built and run on Windows 10, Ubuntu 22, and OSX 10.15. All components used by ScannerClient were selected because they run on all three platforms.
 2. Requires an IP link to the scanner.  This can be wired or wifi.
-3. Only tested with the Uniden SDS200.  Tested both cable connection between scanner and router,  and using a wifi dongle connected to the router.  In both cases the computer was connected to the router over wifi.
 3. Only tested with the Uniden SDS200.  Tested both cable connection between scanner and router,  and using a wifi dongle connected to the router.  In both cases the computer was connected to the router over wifi.
 4.  Testing has been limited.  I'm one person.
 5.  Many capabilities and functions of the scanner have not been implemented.
 6.  If you get the "Advanced" settings confused, delete the sc.cfg file, restart and, restart and re-enter your IP address.  The defaults will be restored.
 7.  Windows security will stop the program the first time you run it.  When prompted, authorize the program to run and Windows will not repeat.  I will likely resolve this eventually.
 8. If you've got the network and IP address correct, but ScannerClient is not connecting, try rebooting the scanner.  Often the audio service on the scanner will stop working because it didn't receive a valid termination of the RTSP session.
-9.  Does not show all modes of the scanner, I implemented what I was immediately interested in.  More can be done over time.
-
-# Ideas for Enhancements
-1. Application volume control and mute.
-2. Search, discovery, close call, etc.
-3. Ability to enable/disable service types.
-4. Ability to select a specific audio device.  Defaults to the default audio device for now.
-5. Ability to enter quick keys.
-6. Direct frequency entry.
 9.  Does not show all modes of the scanner, I implemented what I was immediately interested in.  More can be done over time.
 
 # Ideas for Enhancements
@@ -168,20 +157,6 @@ Follow the Linux instructions.
 
 ## Generate and build ScannerClient
 Follow instructions for Linux, however, look for the executable in ~/repos/ScannerClient/build/sc.app/Contents/MacOS
-## Install xcode
-If you have an older but capable mac you may need an older version of xcode that you won't easily find using brew or the App Store.  Try https://xcodereleases.com which seems to have links to every version.
-
-## Install CMake and Git
-Install cmake version 3.25 minimum, earlier versions have bugs that fail to build wxWidgets with the required options. Brew may be a good option for installing or get directly from Kitware.
-## Install wxWidgets
-Follow the same instructions for Linux.
-
-## WX_CONFIG Environment Variable
-Follow the Linux instructions.
-
-## Generate and build ScannerClient
-Follow instructions for Linux, however, look for the executable in ~/repos/ScannerClient/build/sc.app/Contents/MacOS
-
 
 
 ## RFCs and References Used In Development
