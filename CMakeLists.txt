@@ -132,13 +132,13 @@ ELSE()
 		SET(wxWidgets_ROOT_DIR ~/wx_install)
 	ENDIF(NOT wxWidgets_ROOT_DIR)
 	IF(NOT WX_CONFIG)
-		SET(ENV{WX_CONFIG} ~/wx_install/bin/wx-config)
+		SET($ENV{WX_CONFIG} ~/wx_install/bin/wx-config)
 	ENDIF(NOT WX_CONFIG)
 ENDIF (WIN32)
 
 IF(APPLE)
 	IF(NOT WX_CONFIG)
-		SET(ENV{WX_CONFIG} ~/wx_install/wx-config)
+		SET($ENV{WX_CONFIG} ~/wx_install/wx-config)
 	ENDIF(NOT WX_CONFIG)
 ENDIF(APPLE)
 
@@ -149,6 +149,7 @@ find_package(wxWidgets REQUIRED base core propgrid)
 if(wxWidgets_USE_FILE)
     include(${wxWidgets_USE_FILE})
 endif()
+
 
 
 #--------------------- The Library --------------------
@@ -249,3 +250,19 @@ set_target_properties(sc PROPERTIES CXX_EXTENSIONS OFF)
 set_target_properties(sc PROPERTIES CXX_STANDARD_REQUIRED ON)
 #set_target_properties(sc PROPERTIES POSITION_INDEPENDENT_CODE 1)
 target_link_libraries(sc PRIVATE ${wxWidgets_LIBRARIES} scl samplerate ${OTHER_LIBRARIES})
+
+#-------------- Install -------------------------------
+
+install( TARGETS sc 
+	RUNTIME
+	DESTINATION ${CMAKE_INSTALL_BINDIR}
+	CONFIGURATIONS Release)
+
+#set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
+#set(CPACK_PACKAGE_VERSION_MAJOR 0)
+#set(CPACK_PACKAGE_VERSION_MINOR 1)
+#set_property(INSTALL "$<TARGET_FILE_NAME:sc>"
+#  PROPERTY CPACK_START_MENU_SHORTCUTS "ScannerClient"
+#)
+
+#include(CPack)

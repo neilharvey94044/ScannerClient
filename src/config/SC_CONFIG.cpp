@@ -17,5 +17,4 @@ std::unique_ptr<SC_CONFIG> const SC_CONFIG::get(){
 
 }
 
-
 }

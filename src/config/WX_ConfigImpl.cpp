@@ -17,12 +17,18 @@ WX_ConfigImpl::WX_ConfigImpl()
         m_pConfig = wxConfigBase::Get();
     }
     else{
-        m_pConfig = new wxFileConfig(wxEmptyString, wxEmptyString, "sc.cfg", wxEmptyString, wxCONFIG_USE_RELATIVE_PATH);
+        //m_pConfig = new wxFileConfig(wxEmptyString, wxEmptyString, "sc.cfg", wxEmptyString, wxCONFIG_USE_RELATIVE_PATH);
+        m_pConfig = new wxFileConfig("ScannerClient", wxEmptyString, wxEmptyString, wxEmptyString, wxCONFIG_USE_LOCAL_FILE);
         m_pConfig->SetRecordDefaults(false);
         wxConfigBase::Set(m_pConfig);
         m_initialized = true;
     }
 
+    load();
+
+}
+
+void WX_ConfigImpl::load(){
     // General Settings
     ip_address = m_pConfig->Read("/General/IPAddress", "");
     auto_start = m_pConfig->Read("/General/AutoStart", 0l);
@@ -34,8 +40,6 @@ WX_ConfigImpl::WX_ConfigImpl()
     socket_write_wait_ms = m_pConfig->Read("/Advanced/socket_write_wait", 2000);
     hint_rtp_port = m_pConfig->Read("/Advanced/hint_rtp_port", "49990-49991");
     debug_logging = m_pConfig->ReadLong("/Advanced/debug_logging", 0);
-
 }
-
 
 } // namespace

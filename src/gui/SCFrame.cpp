@@ -56,10 +56,7 @@ wxEND_EVENT_TABLE()
 
 SCFrame::SCFrame(const wxString& title)
        : wxFrame(NULL, wxID_ANY, title),
-        m_pConfig{sc::SC_CONFIG::get()},
-        m_control{std::make_unique<sc::SControl>()},
-        m_audio(std::make_unique<sc::SC_RTaudio>()),
-        m_ss(std::make_unique<sc::ScannerStatus>())
+        m_pConfig{sc::SC_CONFIG::get()}
 
 {
     // set the frame icon
@@ -67,31 +64,17 @@ SCFrame::SCFrame(const wxString& title)
         SetIcon(wxICON(sample));
     #endif
  
-    // create a menu bar
-    wxMenu *fileMenu = new wxMenu;
+    // Try to get IP address of scanner if not already provided
+    if(m_pConfig->ip_address.empty()){
+        SettingsDialog dialog(this, m_settingsData, wxID_ANY);
+        dialog.ShowModal();
+        m_pConfig->load();
+    }
 
-    // About item
-    wxMenu *helpMenu = new wxMenu;
-    helpMenu->Append(SC_About, "&About\tF1", "Show about dialog");
+    m_ss = std::move(std::make_unique<sc::ScannerStatus>());
+    m_audio = std::move(std::make_unique<sc::SC_RTaudio>());
+    m_control = std::move(std::make_unique<sc::SControl>());
 
-    fileMenu->Append(SC_Quit, "E&xit\tAlt-X", "Quit this program");
-
-    // append menu to the menu bar...
-    wxMenuBar *menuBar = new wxMenuBar();
-    menuBar->Append(fileMenu, "&File");
-    menuBar->Append(helpMenu, "&Help");
-
-    // attach menu bar to the frame
-    //SetMenuBar(menuBar);
-
-
-
-/*
-    // configuration file - created where the executable is invoked
-    wxConfigBase *pConfig = new wxFileConfig(wxEmptyString, wxEmptyString, "sc.cfg", wxEmptyString, wxCONFIG_USE_RELATIVE_PATH);
-    pConfig->SetRecordDefaults(false);
-    wxConfigBase::Set(pConfig);
-*/
 
     // create a status bar
     CreateStatusBar(2);
@@ -188,7 +171,6 @@ SCFrame::SCFrame(const wxString& title)
     m_status_panel->Update();
 
     this->SetSizerAndFit(frame_sizer);
-
 
 }
 

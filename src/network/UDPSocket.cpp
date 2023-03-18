@@ -53,7 +53,7 @@ int UDPSocket::sendto(std::string msgout){
             spdlog::debug("Sending: {}", msgout);
             int bytes_sent = ::sendto(m_socket, msgout.c_str(), msgout.length(), 0, (const struct sockaddr *) &m_server_addr, sizeof(m_server_addr));
             if (bytes_sent < 0) {
-                spdlog::error("sendto() failed. {}", GETSOCKETERRNO());
+                spdlog::error("sendto() failed with {} to address [{}]", GETSOCKETERRNO(), m_scanner_ip);
             }
             spdlog::debug("Sent {} bytes.", bytes_sent);
 

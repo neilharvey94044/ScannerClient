@@ -14,9 +14,12 @@ A short demo video is provided (ScannerClientDemo.mp4).
 Internal design has the following major threads of execution:
 1. Real Time Streaming Protocol (RTSP) management.
 2. Real-time Transport Protocol (RTP) management.
-3. Status update using PSI command.
+3. Status update using Uniden PSI command.
 4. Audio using rtaudio.
 5. GUI using wxWidgets.
+6. Upsampling of audio using libsamplerate.  The scanner exposes an audio stream that is 8000 samples per second.  This has been fine on Windows and Ubuntu, however, OSX does not support it, which necessitated upsampling to 44,100 sps.  This provided improved audio on my computers.
+
+The executable name is `sc.exe` on Windows and `sc` on Linux and OSX.
 
 Written with C++20.
 
@@ -31,7 +34,7 @@ License is GPL2.0+.
 - **Channel** - toggles hold on the current Channel.
 - **Bump** - causes scanner to resume scanning.
 - **Avoid** - just like the avoid button on the scanner.
-- **Reboot** - will reboot your scanner.  Use this when the scanner gets hinky and ScannerClient can't connect to it.
+- **Reboot** - will reboot your scanner.  Use this when the scanner gets hinky and ScannerClient can't connect to it.  I've also run into problems with my router after weeks or months of uninterrupted use and needed to reboot it too.
 - **Weather Scan** - scans the weather frequencies.  Use the System button to resume scanning normally.
 - **Update Clock** - updates the scanners clock with your computer's system date/time.
 - **CTRL Key** - same as the Bump button.
@@ -41,33 +44,62 @@ License is GPL2.0+.
 
 
 # Caveats
-1. Currently built and run on Windows. Linux and OSX are in progress.  All components used by ScannerClient were selected because they run on all three platforms.  Getting Linux and OSX running takes priority over more features.
+1. Currently built and run on Windows 10, Ubuntu 22, and OSX 10.15. All components used by ScannerClient were selected because they run on all three platforms.
 2. Requires an IP link to the scanner.  This can be wired or wifi.
-3. Only tested with the Uniden SDS200.  Tested both cable connection between scanner and router,  and using a wifi dongle connected to the router.  In both cases the Windows 10 computer was connected to the router over wifi.
+3. Only tested with the Uniden SDS200.  Tested both cable connection between scanner and router,  and using a wifi dongle connected to the router.  In both cases the computer was connected to the router over wifi.
 4.  Testing has been limited.  I'm one person.
 5.  Many capabilities and functions of the scanner have not been implemented.
-6.  If you get the "Advanced" settings confused, delete the sc.cfg file re-enter your IP address.  The defaults will be restored.
+6.  If you get the "Advanced" settings confused, delete the sc.cfg file, restart and re-enter your IP address.  The defaults will be restored.
 7.  Windows security will stop the program the first time you run it.  When prompted, authorize the program to run and Windows will not repeat.  I will likely resolve this eventually.
 8. If you've got the network and IP address correct, but ScannerClient is not connecting, try rebooting the scanner.  Often the audio service on the scanner will stop working because it didn't receive a valid termination of the RTSP session.
+9.  Does not show all modes of the scanner, I implemented what I was immediately interested in.  More can be done over time.
+
+# Ideas for Enhancements
+1. Application volume control and mute.
+2. Search, discovery, close call, etc.
+3. Ability to enable/disable service types.
+4. Ability to select a specific audio device.  Defaults to the default audio device for now.
+5. Ability to enter quick keys.
+6. Direct frequency entry.
 
 # Build Steps For Windows
 
-#### Prerequisites
-1. Install Visual Studio 2022 Community Edition. During installation with the 'Visual Studio Installer' make sure you select at least the C++ Desktop development category or you'll be unable to compile the project due to the missing C++ tools.
-2. Install cmake.
-3. Install and build wxWidgets for static release (without DLL).  Download https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.1/wxWidgets-3.2.1.zip and unzip it to somewhere such as C:\MSVCDev\wxWidgets.  
- Navigate to C:\MSVCDev\wxWidgets\build\msw (or wherever you extracted) and open wx_vc17.sln.  
-Choose Release and x64 for the build configuration and "Build Solution". All should compile successfully and you can close the project.  You may need to setup environment variables to enable cmake to find wxWidgets.
+## Prequesite Software Installation (all free)
+### Install Visual Studio 2022 Community Edition. 
+During installation with the 'Visual Studio Installer' make sure you select at least the C++ Desktop development category or you'll be unable to compile the project due to the missing C++ tools.
+### Install cmake.  
+https://cmake.org/install/
+### Install and build wxWidgets for static release (without DLL).  
+Download https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.1/wxWidgets-3.2.1.zip and unzip it to somewhere such as `~/repos/wxWidgets-3.2.2.1` where "~" is your home directory.  
+Navigate to ~/repos/wxWidgets-3.2.2.1\build\msw (or wherever you extracted) and open wx_vc17.sln.  
+Choose Release and x64 for the build configuration and "Build Solution". All should compile successfully and you can close the project.
+### install git
+https://git-scm.com/download/win
 
-### To generate:
+
+### Obtain ScannerClient Source Code
+```bash
+cd ~
+mkdir repos
+cd repos
+git clone https://github.com/neilharvey94044/ScannerClient.git
+cd ScannerClient
+```
+
+### Generate ScannerClient:
 ```bash
 cmake -DCMAKE_BUILD_TYPE=Release -S . -B ./build
 ```
-### To build:
+### Build ScannerClient:
 ```bash
 cmake --build ./build --config Release
 ```
-Note: do the above from the top level ScannerClient directory.
+
+### To Install - just copies to a directory in your program files does not add to Start Menu
+```bash
+cmake --install ./build
+```
+Note: do all the above from the top level ScannerClient directory.
 
 # Build Steps for Linux
 ## Basic build support
@@ -110,17 +142,19 @@ Look for the executable in ~/repos/ScannerClient/build/Release, you can run from
 
 # Build Steps for Apple
 
-2.  Install cmake version 3.25 minimum.  Earlier versions have bugs that fail to build wxWidgets with the required options.
-3. Build and install wxWidgets.  Follow https://docs.wxwidgets.org/3.2.0/overview_cmake.html directions.  Build into a separate directory, e.g. ~/repos/wxWidgetsBuild.  Set wxBUILD_SHARED=OFF, wxBUILD_MONOLITHIC=ON, and CMAKE_BUILD_TYPE=Release.  For example the follow assumes you have put the wxWidgets source into ~/repos/wxWidgets-3.2.2.1 and are building into ~/repos/wxWidgetsBuild and installing into ~/wx_install.
-```bash
-cd ~/repos/wxWidgetsBuild
-cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DwxBUILD_SHARED=OFF -DwxBUILD_MONOLITHIC=ON -DCMAKE_INSTALL_PREFIX=~/wx_install ~/repos/wxWidgets-3.2.2.1
-cmake --build .
-cmake --build --target install
-```
-4. Set wxWidgets_DIR to the directory containing the wxWidgetsConfig.cmake file.  For example in CMakeLists.txt:
-```bash
-```
+## Install xcode
+If you have an older but capable mac you may need an older version of xcode that you won't easily find using brew or the App Store.  Try https://xcodereleases.com which seems to have links to every version.
+
+## Install CMake and Git
+Install cmake version 3.25 minimum, earlier versions have bugs that fail to build wxWidgets with the required options. Brew may be a good option for installing or get directly from Kitware.
+## Install wxWidgets
+Follow the same instructions for Linux.
+
+## WX_CONFIG Environment Variable
+Follow the Linux instructions.
+
+## Generate and build ScannerClient
+Follow instructions for Linux, however, look for the executable in ~/repos/ScannerClient/build/sc.app/Contents/MacOS
 
 
 

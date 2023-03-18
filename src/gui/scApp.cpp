@@ -28,9 +28,13 @@ bool SCApp::OnInit()
         return false;
 
     // configuration file - created where the executable is invoked
-    wxConfigBase *pConfig = new wxFileConfig(wxEmptyString, wxEmptyString, "sc.cfg", wxEmptyString, wxCONFIG_USE_RELATIVE_PATH);
-    pConfig->SetRecordDefaults(false);
-    wxConfigBase::Set(pConfig);
+    //wxConfigBase *pConfig = new wxFileConfig(wxEmptyString, wxEmptyString, "sc.cfg", wxEmptyString, wxCONFIG_USE_RELATIVE_PATH);
+    //wxConfigBase *pConfig = new wxFileConfig("ScannerClient", wxEmptyString, wxEmptyString, wxEmptyString, wxCONFIG_USE_LOCAL_FILE);
+    //pConfig->SetRecordDefaults(false);
+    //wxConfigBase::Set(pConfig);
+
+    // initialize configuration
+    auto pConfig = sc::SC_CONFIG::get();
 
     initializeLogger();
 
@@ -70,7 +74,12 @@ int SCApp::FilterEvent(wxEvent& event)
 
 void SCApp::initializeLogger(){
      auto pConfig = sc::SC_CONFIG::get();
-     auto custom_logger = spdlog::basic_logger_mt<spdlog::async_factory>("Custom", "sc.log");
+    #if defined(_WIN32)
+        std::string path = (std::getenv("HOMEDRIVE")) + std::string(std::getenv("HOMEPATH") +std::string("/ScannerClient/sc.log"));
+    #else
+        std::string path = (std::getenv("HOME")) + std::string("/ScannerClient/sc.log");
+    #endif
+     auto custom_logger = spdlog::basic_logger_mt<spdlog::async_factory>("Custom", path);
     //auto custom_logger = spdlog::basic_logger_mt("Custom", "sc.log", true);
     spdlog::set_default_logger(custom_logger);
     if(pConfig->debug_logging == 0){

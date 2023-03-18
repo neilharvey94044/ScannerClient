@@ -15,6 +15,7 @@ class WX_ConfigImpl : public SC_CONFIG {
     public:
         friend class SC_CONFIG;
         //friend std::unique_ptr<SC_CONFIG> std::make_unique<SC_CONFIG>();
+        virtual void load() override;
 
     private:
         WX_ConfigImpl();

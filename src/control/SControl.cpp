@@ -61,6 +61,9 @@ void SControl::sendToScanner(std::string msg){
 }
 
 std::string SControl::getModel() {
+    if(m_pConfig->ip_address.empty()){
+        return "";
+    }
     auto myUDP = make_unique<sc::UDPSocket>(m_pConfig->ip_address, m_pConfig->status_udp_port);
     myUDP->sendto(msg.get_model);
     std::string model = myUDP->recvfrom();
@@ -70,6 +73,9 @@ std::string SControl::getModel() {
 }
 
 std::string SControl::getFirmware(){
+    if(m_pConfig->ip_address.empty()){
+        return "";
+    }
     auto myUDP = make_unique<sc::UDPSocket>(m_pConfig->ip_address, m_pConfig->status_udp_port);
     myUDP->sendto(msg.get_firmware);
     std::string firmware = myUDP->recvfrom();
