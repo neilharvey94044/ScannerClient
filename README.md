@@ -75,6 +75,8 @@ https://cmake.org/install/
 Download https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.1/wxWidgets-3.2.1.zip and unzip it to somewhere such as `~/repos/wxWidgets-3.2.2.1` where "~" is your home directory.  
 Navigate to ~/repos/wxWidgets-3.2.2.1\build\msw (or wherever you extracted) and open wx_vc17.sln.  
 Choose Release and x64 for the build configuration and "Build Solution". All should compile successfully and you can close the project.
+Create an environment variable named wxWidgets_ROOT_DIR containing the full path to your wxWidgets installation.  For example "C:\dev\repos\wxWidgets-3.2.2.1", this will allow cmake to find your wxWidgets install.
+
 ### install git
 https://git-scm.com/download/win
 
