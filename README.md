@@ -19,7 +19,6 @@ Internal design has the following major threads of execution:
 4. Audio using rtaudio.
 5. GUI using wxWidgets.
 6. Upsampling of audio using libsamplerate.  The scanner exposes an audio stream that is 8000 samples per second.  This has been fine on Windows and Ubuntu, however, OSX does not support it, which necessitated upsampling to 44,100 sps.  This provided improved audio on my computers.
-6. Upsampling of audio using libsamplerate.  The scanner exposes an audio stream that is 8000 samples per second.  This has been fine on Windows and Ubuntu, however, OSX does not support it, which necessitated upsampling to 44,100 sps.  This provided improved audio on my computers.
 
 The executable name is `sc.exe` on Windows and `sc` on Linux and OSX.
 
@@ -36,7 +35,7 @@ License is GPL2.0+.
 - **Channel** - toggles hold on the current Channel.
 - **Bump** - causes scanner to resume scanning.
 - **Avoid** - just like the avoid button on the scanner.
-- **Reboot** - will reboot your scanner.  Use this when the scanner gets hinky and ScannerClient can't connect to it.  I've also run into problems with my router after weeks or months of uninterrupted use and needed to reboot it too.  I've also run into problems with my router after weeks or months of uninterrupted use and needed to reboot it too.
+- **Reboot** - will reboot your scanner.  Use this when the scanner gets hinky and ScannerClient can't connect to it.  I've also run into problems with my router after weeks or months of uninterrupted use and needed to reboot it too.
 - **Weather Scan** - scans the weather frequencies.  Use the System button to resume scanning normally.
 - **Update Clock** - updates the scanners clock with your computer's system date/time.
 - **CTRL Key** - same as the Bump button.
@@ -51,10 +50,9 @@ License is GPL2.0+.
 3. Only tested with the Uniden SDS200.  Tested both cable connection between scanner and router,  and using a wifi dongle connected to the router.  In both cases the computer was connected to the router over wifi.
 4.  Testing has been limited.  I'm one person.
 5.  Many capabilities and functions of the scanner have not been implemented.
-6.  If you get the "Advanced" settings confused, delete the sc.cfg file, restart and, restart and re-enter your IP address.  The defaults will be restored.
-7.  Windows security will stop the program the first time you run it.  When prompted, authorize the program to run and Windows will not repeat.  I will likely resolve this eventually.
-8. If you've got the network and IP address correct, but ScannerClient is not connecting, try rebooting the scanner.  Often the audio service on the scanner will stop working because it didn't receive a valid termination of the RTSP session.
-9.  Does not show all modes of the scanner, I implemented what I was immediately interested in.  More can be done over time.
+6.  Windows security will stop the program the first time you run it.  When prompted, authorize the program to run and Windows will not repeat.  I will likely resolve this eventually with an installation that modifies the firewall to allow ScannerClient.
+7. If you've got the network and IP address correct, but ScannerClient is not connecting, try rebooting the scanner.  Often the audio service on the scanner will stop working because it didn't receive a valid termination of the RTSP session.
+8.  Does not show all modes of the scanner, I implemented what I was immediately interested in.  More can be done over time.
 
 # Ideas for Enhancements
 1. Application volume control and mute.
@@ -69,13 +67,14 @@ License is GPL2.0+.
 ## Prequesite Software Installation (all free)
 ### Install Visual Studio 2022 Community Edition. 
 During installation with the 'Visual Studio Installer' make sure you select at least the C++ Desktop development category or you'll be unable to compile the project due to the missing C++ tools.
+https://visualstudio.microsoft.com/vs/community/
 ### Install cmake.  
 https://cmake.org/install/
 ### Install and build wxWidgets for static release (without DLL).  
-Download https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.1/wxWidgets-3.2.1.zip and unzip it to somewhere such as `~/repos/wxWidgets-3.2.2.1` where "~" is your home directory.  
-Navigate to ~/repos/wxWidgets-3.2.2.1\build\msw (or wherever you extracted) and open wx_vc17.sln.  
+Download https://github.com/wxWidgets/wxWidgets/releases/download/v3.2.2.1/wxWidgets-3.2.2.1.zip and unzip it to somewhere such as `~/repos/wxWidgets-3.2.2.1` where `~` is your home directory.  
+Navigate to `~/repos/wxWidgets-3.2.2.1\build\msw` (or wherever you extracted) and open `wx_vc17.sln`.  
 Choose Release and x64 for the build configuration and "Build Solution". All should compile successfully and you can close the project.
-Create an environment variable named wxWidgets_ROOT_DIR containing the full path to your wxWidgets installation.  For example "C:\dev\repos\wxWidgets-3.2.2.1", this will allow cmake to find your wxWidgets install.
+Create an environment variable named wxWidgets_ROOT_DIR containing the full path to your wxWidgets installation.  For example "C:\Users\yourname\repos\wxWidgets-3.2.2.1", this will allow cmake to find your wxWidgets install.
 
 ### install git
 https://git-scm.com/download/win
@@ -99,7 +98,7 @@ cmake -DCMAKE_BUILD_TYPE=Release -S . -B ./build
 cmake --build ./build --config Release
 ```
 
-### To Install - just copies to a directory in your program files does not add to Start Menu
+### Install ScannerClient - just copies to a directory in your program files does not add to Start Menu
 ```bash
 cmake --install ./build
 ```
