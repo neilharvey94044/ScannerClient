@@ -253,10 +253,14 @@ target_link_libraries(sc PRIVATE ${wxWidgets_LIBRARIES} scl samplerate ${OTHER_L
 
 #-------------- Install -------------------------------
 
+if(NOT APPLE)
+
 install( TARGETS sc 
 	RUNTIME
 	DESTINATION ${CMAKE_INSTALL_BINDIR}
 	CONFIGURATIONS Release)
+
+endif()
 
 #set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
 #set(CPACK_PACKAGE_VERSION_MAJOR 0)

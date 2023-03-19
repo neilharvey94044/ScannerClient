@@ -119,7 +119,8 @@ First download wxWidgets source to `~/repos/wxWidgets-3.2.2.1` or similar, chang
 cd ~
 mkdir wx_install
 cd ~/repos/wxWidgets-3.2.2.1
-./config --prefix ~/wx_install --disable-shared --enable-monolithic --enable-propgrid
+./autogen.sh
+./configure --prefix ~/wx_install --disable-shared --enable-monolithic --enable-propgrid
 make -j4
 make install
 ```

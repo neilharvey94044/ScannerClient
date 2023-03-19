@@ -18,6 +18,7 @@ class SC_CONFIG {
     public:
         static const std::unique_ptr<SC_CONFIG> get();
         virtual void load() = 0;
+        virtual ~SC_CONFIG() = default;
 
         std::string ip_address{"0.0.0.0"};
         long auto_start{0};
